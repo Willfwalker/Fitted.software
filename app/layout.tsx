@@ -18,9 +18,21 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000"
+  ),
   title: "Fitted",
   description:
     "We replace your SaaS sprawl with a single, tailored platform. Built fast with AI, fitted to how you actually work.",
+  openGraph: {
+    title: "Fitted",
+    description:
+      "We replace your SaaS sprawl with a single, tailored platform. Built fast with AI, fitted to how you actually work.",
+    siteName: "Fitted",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
