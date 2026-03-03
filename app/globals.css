@@ -1,6 +1,42 @@
+@import "tailwindcss";
+
 /* ============================================
    FITTED AGENCY — Design System
    ============================================ */
+
+@theme {
+  --color-background: #0B0B0B;
+  --color-foreground: #E8E0D4;
+  --color-card: #1A1816;
+  --color-card-foreground: #E8E0D4;
+  --color-popover: #1A1816;
+  --color-popover-foreground: #E8E0D4;
+  --color-primary: #D4734E;
+  --color-primary-foreground: #0B0B0B;
+  --color-secondary: #1A1816;
+  --color-secondary-foreground: #E8E0D4;
+  --color-muted: #131110;
+  --color-muted-foreground: #8A817A;
+  --color-accent: #D4734E;
+  --color-accent-foreground: #0B0B0B;
+  --color-destructive: #E87D5F;
+  --color-destructive-foreground: #E8E0D4;
+  --color-border: #2A2520;
+  --color-input: #2A2520;
+  --color-ring: #D4734E;
+  --color-sidebar-background: #0F0E0D;
+  --color-sidebar-foreground: #E8E0D4;
+  --color-sidebar-primary: #D4734E;
+  --color-sidebar-primary-foreground: #0B0B0B;
+  --color-sidebar-accent: #1A1816;
+  --color-sidebar-accent-foreground: #E8E0D4;
+  --color-sidebar-border: #2A2520;
+  --color-sidebar-ring: #D4734E;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
 
 :root {
   --bg: #0B0B0B;
