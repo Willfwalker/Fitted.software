@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 
 type JobStatus = {
-  status: "queued" | "running" | "complete" | "failed";
+  status: "queued" | "running" | "complete" | "failed" | "rejected";
   detail: string | Record<string, unknown> | null;
+  mode?: "easy" | "hard";
+  supervisor?: { safe: boolean; difficulty: string; reason: string };
 };
 
 export default function Home() {
@@ -26,7 +28,7 @@ export default function Home() {
         const res = await fetch(`${apiUrl}/api/job/${jobId}`);
         const data = await res.json();
         setJob(data);
-        if (data.status === "complete" || data.status === "failed") {
+        if (data.status === "complete" || data.status === "failed" || data.status === "rejected") {
           clearInterval(poll);
         }
       } catch {
@@ -74,6 +76,7 @@ export default function Home() {
     running: "#5B8DEF",
     complete: "#5EC69A",
     failed: "#E87D5F",
+    rejected: "#E85F5F",
   };
 
   return (
