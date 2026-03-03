@@ -110,16 +110,18 @@ def run_agent(job_id: str, repo_url: str, task_prompt: str):
     with tempfile.TemporaryDirectory(prefix="agent-") as workspace:
         try:
             # ── 1. Clone ─────────────────────────────────────────────
-            # Inject token into HTTPS URL for private repos
+            _run(["git", "clone", repo_url, "."], cwd=workspace)
+
+            # Configure git identity and auth for push
+            _run(["git", "config", "user.email", "agent@fittedagency.com"], cwd=workspace)
+            _run(["git", "config", "user.name", "Fitted AI Agent"], cwd=workspace)
+
+            # Set the remote to the authenticated URL for push
             auth_url = repo_url.replace(
                 "https://github.com/",
                 f"https://x-access-token:{github_token}@github.com/",
             )
-            _run(["git", "clone", auth_url, "."], cwd=workspace)
-
-            # Configure git identity for commits
-            _run(["git", "config", "user.email", "agent@fittedagency.com"], cwd=workspace)
-            _run(["git", "config", "user.name", "Fitted AI Agent"], cwd=workspace)
+            _run(["git", "remote", "set-url", "origin", auth_url], cwd=workspace)
 
             # ── 2. Inject baseline rules ────────────────────────────
             # Write CLAUDE.md so the CLI picks up project conventions
