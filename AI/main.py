@@ -117,11 +117,13 @@ def run_agent(job_id: str, repo_url: str, task_prompt: str):
             _run(["git", "config", "user.name", "Fitted AI Agent"], cwd=workspace)
 
             # Set the remote to the authenticated URL for push
-            auth_url = repo_url.replace(
-                "https://github.com/",
-                f"https://x-access-token:{github_token}@github.com/",
+            # Use git credential helper instead of embedding token in URL
+            _run(["git", "config", "credential.helper", "store"], cwd=workspace)
+            credentials_file = Path(workspace) / ".git-credentials"
+            credentials_file.write_text(
+                f"https://Willfwalker:{github_token}@github.com\n"
             )
-            _run(["git", "remote", "set-url", "origin", auth_url], cwd=workspace)
+            _run(["git", "config", "credential.helper", f"store --file={credentials_file}"], cwd=workspace)
 
             # ── 2. Inject baseline rules ────────────────────────────
             # Write CLAUDE.md so the CLI picks up project conventions
