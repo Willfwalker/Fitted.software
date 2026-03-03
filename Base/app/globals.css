@@ -1,8 +1,15 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
 /* ============================================
    FITTED AGENCY — Design System
    ============================================ */
 
 :root {
+  /* Fitted design tokens */
   --bg: #0B0B0B;
   --bg-elevated: #131110;
   --bg-card: #1A1816;
@@ -16,44 +23,77 @@
   --border-light: rgba(232, 224, 212, 0.06);
   --font-display: "Instrument Serif", Georgia, serif;
   --font-body: "Outfit", system-ui, sans-serif;
+
+  /* shadcn/ui — always dark, matched to Fitted palette */
+  --radius: 0.625rem;
+  --background: #0B0B0B;
+  --foreground: #E8E0D4;
+  --card: #1A1816;
+  --card-foreground: #E8E0D4;
+  --popover: #1A1816;
+  --popover-foreground: #E8E0D4;
+  --primary: #D4734E;
+  --primary-foreground: #0B0B0B;
+  --secondary: #1A1816;
+  --secondary-foreground: #E8E0D4;
+  --muted: #131110;
+  --muted-foreground: #8A817A;
+  --accent-foreground: #E8E0D4;
+  --destructive: oklch(0.704 0.191 22.216);
+  --input: #2A2520;
+  --ring: #D4734E;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #131110;
+  --sidebar-foreground: #E8E0D4;
+  --sidebar-primary: #D4734E;
+  --sidebar-primary-foreground: #0B0B0B;
+  --sidebar-accent: #1A1816;
+  --sidebar-accent-foreground: #E8E0D4;
+  --sidebar-border: #2A2520;
+  --sidebar-ring: #D4734E;
 }
 
-/* --- Reset --- */
+/* --- Reset (in @layer base so Tailwind utilities can override) --- */
 
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-  background: var(--bg);
-  color: var(--text);
-}
+  html {
+    scroll-behavior: smooth;
+    background: var(--bg);
+    color: var(--text);
+  }
 
-body {
-  font-family: var(--font-body);
-  font-weight: 300;
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
 
-/* --- Grain Overlay --- */
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.03;
-  pointer-events: none;
-  z-index: 10000;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
-  background-repeat: repeat;
+  /* Grain Overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 10000;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
 }
 
 /* --- Shared Section Styles --- */
@@ -1293,4 +1333,77 @@ body::after {
     padding: 36px 24px;
     text-align: center;
   }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* --- Dashboard Animations --- */
+
+@keyframes dash-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-dash-in {
+  animation: dash-fade-in-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes chart-ambient-pulse {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.07; }
+}
+
+.animate-chart-ambient {
+  animation: chart-ambient-pulse 4s ease-in-out infinite;
 }
