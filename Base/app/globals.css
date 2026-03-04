@@ -1407,3 +1407,144 @@
 .animate-chart-ambient {
   animation: chart-ambient-pulse 4s ease-in-out infinite;
 }
+
+/* --- Schedule-X Calendar Dark Theme Override --- */
+
+.sx-fitted-calendar .sx-react-calendar-wrapper {
+  --sx-color-surface: var(--bg-card);
+  --sx-color-on-surface: var(--text);
+  --sx-color-surface-dim: var(--bg);
+  --sx-color-on-surface-variant: var(--text-muted);
+  --sx-color-outline: var(--border);
+  --sx-color-outline-variant: var(--border);
+  --sx-color-primary: var(--accent);
+  --sx-color-on-primary: var(--bg);
+  --sx-color-primary-container: rgb(91, 58, 43);
+  --sx-color-on-primary-container: var(--text);
+  --sx-color-secondary-container: rgba(232, 224, 212, 0.05);
+  --sx-color-on-secondary-container: var(--text-muted);
+  --sx-color-tertiary-container: var(--bg-elevated);
+  --sx-color-on-tertiary-container: var(--text);
+  --sx-color-inverse-surface: var(--text);
+  --sx-color-inverse-on-surface: var(--bg);
+  font-family: var(--font-body);
+}
+
+/* Day column headers */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__date-grid-day__header {
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+/* Week/day view events */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__time-grid-event {
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__time-grid-event:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Hide time on week/day events — the time axis already shows it */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__time-grid-event-time {
+  display: none;
+}
+
+/* Month grid day headers */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-day__header {
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+/* Month grid events */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-event {
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 0.76rem;
+  padding: 2px 8px;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  font-weight: 450;
+}
+
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-event:hover {
+  opacity: 0.85;
+  transform: scale(1.01);
+}
+
+/* Month grid — overflow "+N more" link */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-day__events-more {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+/* Month grid day cells — taller for breathing room */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-day {
+  min-height: 140px;
+}
+
+/* Month grid wrapper — ensure generous overall height */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-grid-wrapper {
+  min-height: 750px;
+}
+
+/* Date picker */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__date-picker {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* All buttons — cursor pointer + font */
+.sx-fitted-calendar .sx-react-calendar-wrapper button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+/* View selector buttons */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__view-selection-item {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+/* Navigation arrows */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__chevron-wrapper {
+  cursor: pointer;
+}
+
+/* Today button */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__today-button {
+  cursor: pointer;
+}
+
+/* Clickable time grid slots */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__time-grid-day {
+  cursor: pointer;
+}
+
+/* Date grid clickable cells */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__date-grid-day {
+  cursor: pointer;
+}
+
+/* Month agenda events */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__month-agenda-event {
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+/* Current time indicator */
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__current-time-indicator {
+  background: var(--accent);
+  height: 2px;
+}
+
+.sx-fitted-calendar .sx-react-calendar-wrapper .sx__current-time-indicator::before {
+  background: var(--accent);
+}

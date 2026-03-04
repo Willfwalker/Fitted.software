@@ -8,14 +8,15 @@
     "start": "next start"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.50",
-    "@ai-sdk/react": "^3.0.107",
-    "@anthropic-ai/sdk": "^0.78.0",
     "@react-pdf/renderer": "^4.3.2",
+    "@schedule-x/calendar": "^4.2.0",
+    "@schedule-x/drag-and-drop": "^3.7.3",
+    "@schedule-x/events-service": "^4.2.0",
+    "@schedule-x/react": "^4.1.0",
+    "@schedule-x/theme-default": "^4.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/postcss": "^4.2.1",
-    "ai": "^6.0.105",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -32,6 +33,7 @@
     "resend": "^6.9.2",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
+    "temporal-polyfill": "^0.3.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
