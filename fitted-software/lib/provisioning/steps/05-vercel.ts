@@ -54,6 +54,8 @@ export async function stepVercel(ctx: ProvisionContext): Promise<Partial<Provisi
     { key: "RESEND_DOMAIN", value: process.env.SHARED_RESEND_DOMAIN || "resend.dev" },
     { key: "NEXT_PUBLIC_APP_URL", value: appUrl },
     { key: "CRON_SECRET", value: cronSecret },
+    { key: "AI_SERVER_URL", value: process.env.AI_SERVER_URL || "" },
+    { key: "GITHUB_REPO_URL", value: `https://github.com/${ghOrg}/${projectName}` },
   ]
 
   for (const env of envVars) {

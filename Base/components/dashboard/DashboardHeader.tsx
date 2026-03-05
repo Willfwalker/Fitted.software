@@ -1,7 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname } from "next/navigation"
+import { Sparkles } from "lucide-react"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
+import { ChatPanel } from "@/components/chat/ChatPanel"
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -31,13 +34,26 @@ function getPageTitle(pathname: string): string {
 export function DashboardHeader() {
   const pathname = usePathname()
   const title = getPageTitle(pathname)
+  const [chatOpen, setChatOpen] = useState(false)
 
   return (
-    <header className="hidden lg:flex items-center justify-between h-14 px-8 border-b border-[var(--border)] bg-[var(--bg)]">
-      <h2 className="text-[0.92rem] text-[var(--text)] font-light tracking-tight">
-        {title}
-      </h2>
-      <NotificationBell />
-    </header>
+    <>
+      <header className="hidden lg:flex items-center justify-between h-14 px-8 border-b border-[var(--border)] bg-[var(--bg)]">
+        <h2 className="text-[0.92rem] text-[var(--text)] font-light tracking-tight">
+          {title}
+        </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors"
+          >
+            <Sparkles className="size-3.5 text-[var(--accent)]" />
+            Add a Feature
+          </button>
+          <NotificationBell />
+        </div>
+      </header>
+      <ChatPanel open={chatOpen} onOpenChange={setChatOpen} />
+    </>
   )
 }

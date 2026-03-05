@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server"
 import Link from "next/link"
+import { DeleteClientButton } from "@/components/delete-client-button"
 
 export default async function DashboardPage() {
   const supabase = createServiceClient()
@@ -51,6 +52,9 @@ export default async function DashboardPage() {
                   </a>
                 )}
                 <StatusBadge status={client.status} />
+                {(client.status === "failed" || client.status === "rolled_back") && (
+                  <DeleteClientButton slug={client.slug} />
+                )}
               </div>
             </div>
           ))}

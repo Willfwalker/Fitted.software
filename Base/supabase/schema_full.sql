@@ -34,6 +34,8 @@ CREATE TYPE public.form_field_type AS ENUM (
   'TEXT', 'TEXTAREA', 'EMAIL', 'PHONE', 'NUMBER', 'DATE',
   'SELECT', 'MULTI_SELECT', 'CHECKBOX', 'RADIO', 'FILE', 'HIDDEN'
 );
+CREATE TYPE public.chat_role AS ENUM ('user', 'assistant', 'status');
+CREATE TYPE public.chat_job_status AS ENUM ('pending', 'running', 'complete', 'rejected', 'failed');
 
 -- ============================================
 -- Updated-at trigger function
@@ -482,6 +484,24 @@ CREATE TRIGGER trg_increment_submission_count
   FOR EACH ROW EXECUTE FUNCTION public.increment_form_submission_count();
 
 -- ============================================
+-- Chat Messages
+-- ============================================
+
+CREATE TABLE public.chat_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role public.chat_role NOT NULL,
+  content text NOT NULL,
+  job_id text,
+  job_status public.chat_job_status,
+  job_detail jsonb,
+  created_at timestamptz DEFAULT now()
+);
+CREATE INDEX idx_chat_messages_org ON public.chat_messages(org_id, created_at DESC);
+CREATE INDEX idx_chat_messages_job ON public.chat_messages(job_id) WHERE job_id IS NOT NULL;
+
+-- ============================================
 -- RLS — All tables
 -- ============================================
 
@@ -510,6 +530,7 @@ ALTER TABLE public.message_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.form_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
 -- Organizations
 CREATE POLICY "Members can view their org" ON public.organizations FOR SELECT USING (id IN (SELECT public.get_user_org_ids()));
@@ -657,3 +678,8 @@ CREATE POLICY "Public can view active forms by share_token" ON public.forms FOR 
 CREATE POLICY "Users can view submissions in their org" ON public.form_submissions FOR SELECT USING (org_id IN (SELECT public.get_user_org_ids()));
 CREATE POLICY "Users can delete submissions in their org" ON public.form_submissions FOR DELETE USING (org_id IN (SELECT public.get_user_org_ids()));
 CREATE POLICY "Anyone can submit to forms" ON public.form_submissions FOR INSERT WITH CHECK (true);
+
+-- Chat messages
+CREATE POLICY "Org members can view chat messages" ON public.chat_messages FOR SELECT USING (org_id IN (SELECT public.get_user_org_ids()));
+CREATE POLICY "Org members can insert chat messages" ON public.chat_messages FOR INSERT WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
+CREATE POLICY "Org members can update chat messages" ON public.chat_messages FOR UPDATE USING (org_id IN (SELECT public.get_user_org_ids()));
