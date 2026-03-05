@@ -105,56 +105,18 @@ CREATE INDEX idx_invite_codes_code ON public.invite_codes(code);
 CREATE INDEX idx_invite_codes_org ON public.invite_codes(org_id);
 
 -- ============================================
--- User signup trigger
+-- Helper: check if any org exists (used by proxy)
 -- ============================================
 
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+CREATE OR REPLACE FUNCTION public.org_exists()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
 AS $$
-DECLARE
-  signup_role text;
-  base_name text;
-  org_slug text;
-  new_org_id uuid;
-  org_name text;
-  invite record;
-  invite_code_val text;
-BEGIN
-  signup_role := coalesce(new.raw_user_meta_data ->> 'signup_role', 'OWNER');
-
-  IF signup_role = 'MEMBER' THEN
-    invite_code_val := upper(trim(coalesce(new.raw_user_meta_data ->> 'invite_code', '')));
-    IF invite_code_val = '' THEN RAISE EXCEPTION 'Invite code is required for employee signup'; END IF;
-
-    SELECT * INTO invite FROM public.invite_codes WHERE code = invite_code_val;
-    IF NOT FOUND THEN RAISE EXCEPTION 'Invalid invite code'; END IF;
-    IF invite.expires_at IS NOT NULL AND invite.expires_at < now() THEN RAISE EXCEPTION 'Invite code has expired'; END IF;
-    IF invite.use_count >= invite.max_uses THEN RAISE EXCEPTION 'Invite code has reached its usage limit'; END IF;
-
-    INSERT INTO public.organization_members (org_id, user_id, role) VALUES (invite.org_id, new.id, 'MEMBER');
-    UPDATE public.invite_codes SET use_count = use_count + 1 WHERE id = invite.id;
-  ELSE
-    org_name := coalesce(nullif(trim(new.raw_user_meta_data ->> 'org_name'), ''),
-                         coalesce(new.raw_user_meta_data ->> 'full_name',
-                                  split_part(new.email, '@', 1)) || '''s Org');
-    base_name := split_part(new.email, '@', 1);
-    org_slug := lower(regexp_replace(base_name, '[^a-z0-9]+', '-', 'g'));
-    org_slug := trim(BOTH '-' FROM org_slug);
-    WHILE exists (SELECT 1 FROM public.organizations WHERE slug = org_slug) LOOP
-      org_slug := org_slug || '-' || substr(gen_random_uuid()::text, 1, 4);
-    END LOOP;
-
-    INSERT INTO public.organizations (name, slug, owner_id) VALUES (org_name, org_slug, new.id) RETURNING id INTO new_org_id;
-    INSERT INTO public.organization_members (org_id, user_id, role) VALUES (new_org_id, new.id, 'OWNER');
-  END IF;
-
-  RETURN new;
-END;
+  SELECT EXISTS (SELECT 1 FROM public.organizations LIMIT 1);
 $$;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================
 -- CRM: Companies, Contacts, Deals, Activities

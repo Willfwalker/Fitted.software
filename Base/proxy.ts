@@ -32,21 +32,54 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protect authenticated routes
+  // Skip static/API routes
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api")) {
+    return supabaseResponse
+  }
+
+  // Check if an org exists
+  const { data: orgExists } = await supabase.rpc("org_exists")
+
+  if (!orgExists) {
+    // No org yet — force everyone to /setup
+    if (pathname !== "/setup") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/setup"
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
+  }
+
+  // Org exists — normal routing
   const PROTECTED_PREFIXES = [
     "/dashboard", "/crm", "/tasks", "/calendar",
     "/invoicing", "/messages", "/files", "/forms",
     "/reports", "/settings",
   ]
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))
-  if (!user && isProtected) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    return NextResponse.redirect(url)
+
+  if (!user) {
+    // Not authenticated
+    if (pathname === "/") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      return NextResponse.redirect(url)
+    }
+    if (pathname === "/setup") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      return NextResponse.redirect(url)
+    }
+    if (isProtected) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/login"
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
   }
 
-  // Redirect logged-in users away from /login
-  if (user && (pathname === "/login" || pathname === "/signup")) {
+  // Authenticated user — redirect away from auth pages
+  if (pathname === "/" || pathname === "/login" || pathname === "/signup" || pathname === "/setup") {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"
     return NextResponse.redirect(url)

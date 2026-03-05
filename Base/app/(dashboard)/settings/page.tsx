@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { SignOutButton } from "@/components/dashboard/SignOutButton"
 import { TagManager } from "@/components/tags/TagManager"
 import { ModuleToggle } from "@/components/settings/ModuleToggle"
+import { InviteCodeManager } from "@/components/settings/InviteCodeManager"
 import { DEFAULT_ENABLED_MODULES, type ModuleKey } from "@/lib/config/modules"
 import type { Tag } from "@/lib/types/crm"
 
@@ -28,6 +29,11 @@ export default async function SettingsPage() {
 
   let tags: Tag[] = []
   let enabledModules: ModuleKey[] = DEFAULT_ENABLED_MODULES
+  let inviteCodes: Array<{
+    id: string; code: string; max_uses: number;
+    use_count: number; expires_at: string | null; created_at: string
+  }> = []
+  const isAdmin = membership?.role === "OWNER" || membership?.role === "ADMIN"
 
   if (membership?.org_id) {
     const { data } = await supabase
@@ -45,6 +51,15 @@ export default async function SettingsPage() {
 
     if (org?.enabled_modules && Array.isArray(org.enabled_modules)) {
       enabledModules = org.enabled_modules as ModuleKey[]
+    }
+
+    if (isAdmin) {
+      const { data: codes } = await supabase
+        .from("invite_codes")
+        .select("id, code, max_uses, use_count, expires_at, created_at")
+        .eq("org_id", membership.org_id)
+        .order("created_at", { ascending: false })
+      inviteCodes = codes ?? []
     }
   }
 
@@ -69,6 +84,13 @@ export default async function SettingsPage() {
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
         <ModuleToggle enabledModules={enabledModules} />
       </div>
+
+      {/* Invite Codes (OWNER/ADMIN only) */}
+      {isAdmin && (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
+          <InviteCodeManager inviteCodes={inviteCodes} />
+        </div>
+      )}
 
       {/* Tags */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">

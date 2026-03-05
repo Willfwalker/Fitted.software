@@ -65,89 +65,18 @@ create policy "Owners and admins can manage invite codes"
   );
 
 -- ============================================
--- Handle new user signup (branches on role)
+-- Helper: check if any org exists (used by proxy)
 -- ============================================
 
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = ''
+create or replace function public.org_exists()
+returns boolean
+language sql
+security definer
+stable
+set search_path = ''
 as $$
-declare
-  signup_role text;
-  base_name text;
-  org_slug text;
-  new_org_id uuid;
-  org_name text;
-  invite record;
-  invite_code_val text;
-begin
-  signup_role := coalesce(new.raw_user_meta_data ->> 'signup_role', 'OWNER');
-
-  if signup_role = 'MEMBER' then
-    -- Employee flow: join existing org via invite code
-    invite_code_val := upper(trim(coalesce(new.raw_user_meta_data ->> 'invite_code', '')));
-
-    if invite_code_val = '' then
-      raise exception 'Invite code is required for employee signup';
-    end if;
-
-    select * into invite
-    from public.invite_codes
-    where code = invite_code_val;
-
-    if not found then
-      raise exception 'Invalid invite code';
-    end if;
-
-    if invite.expires_at is not null and invite.expires_at < now() then
-      raise exception 'Invite code has expired';
-    end if;
-
-    if invite.use_count >= invite.max_uses then
-      raise exception 'Invite code has reached its usage limit';
-    end if;
-
-    -- Join the org as MEMBER
-    insert into public.organization_members (org_id, user_id, role)
-    values (invite.org_id, new.id, 'MEMBER');
-
-    -- Increment use count
-    update public.invite_codes
-    set use_count = use_count + 1
-    where id = invite.id;
-
-  else
-    -- Owner flow: create new org
-    org_name := coalesce(nullif(trim(new.raw_user_meta_data ->> 'org_name'), ''),
-                         coalesce(new.raw_user_meta_data ->> 'full_name',
-                                  split_part(new.email, '@', 1)) || '''s Org');
-
-    base_name := split_part(new.email, '@', 1);
-    org_slug  := lower(regexp_replace(base_name, '[^a-z0-9]+', '-', 'g'));
-    org_slug  := trim(both '-' from org_slug);
-
-    -- Ensure slug uniqueness
-    while exists (select 1 from public.organizations where slug = org_slug) loop
-      org_slug := org_slug || '-' || substr(gen_random_uuid()::text, 1, 4);
-    end loop;
-
-    insert into public.organizations (name, slug, owner_id)
-    values (org_name, org_slug, new.id)
-    returning id into new_org_id;
-
-    insert into public.organization_members (org_id, user_id, role)
-    values (new_org_id, new.id, 'OWNER');
-  end if;
-
-  return new;
-end;
+  select exists (select 1 from public.organizations limit 1);
 $$;
-
--- Trigger on auth.users insert
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
 
 -- ============================================
 -- Row Level Security

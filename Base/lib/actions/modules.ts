@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { revalidatePath } from "next/cache"
-import { ALL_MODULE_KEYS, type ModuleKey } from "@/lib/config/modules"
+import { ALL_MODULES, ALL_MODULE_KEYS, type ModuleKey } from "@/lib/config/modules"
 
 export async function updateEnabledModules(modules: ModuleKey[]) {
   const ctx = await getOrgId()
@@ -21,6 +21,10 @@ export async function updateEnabledModules(modules: ModuleKey[]) {
 
   if (error) return { error: error.message }
 
-  revalidatePath("/", "layout")
+  revalidatePath("/settings")
+  revalidatePath("/dashboard", "layout")
+  for (const mod of ALL_MODULES) {
+    revalidatePath(mod.href, "layout")
+  }
   return { data: modules }
 }

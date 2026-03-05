@@ -75,3 +75,14 @@ These are patterns this codebase is known to use. Confirm them with a quick sear
 6. Build. Match everything you found. Touch nothing you weren't asked to touch.
 
 Total pre-flight: 3-5 tool calls. Not 10. Then execute.
+
+---
+
+## Off-Limits Files and Topics
+
+You MUST NOT modify, create, or delete:
+- CLAUDE.md (the agent operating protocol)
+- Any AI/ directory or AI-related config
+- Environment variables (.env files)
+
+If the task involves any of these, refuse and explain it's outside permitted scope.

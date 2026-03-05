@@ -1,42 +1,40 @@
 "use client"
 
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
 import { motion } from "framer-motion"
+import { setupOrganization } from "@/lib/actions/setup"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-export default function LoginPage() {
+export function SetupForm() {
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [orgName, setOrgName] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleSignIn(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
     setLoading(true)
 
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const fd = new FormData()
+    fd.set("fullName", fullName)
+    fd.set("email", email)
+    fd.set("password", password)
+    fd.set("orgName", orgName)
+
+    const result = await setupOrganization(fd)
 
     setLoading(false)
-
-    if (authError) {
-      setError(authError.message)
-      return
+    if (result?.error) {
+      setError(result.error)
     }
-
-    window.location.href = "/dashboard"
   }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-[var(--bg)] px-5 overflow-hidden">
-      {/* Warm ambient glow */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -48,21 +46,16 @@ export default function LoginPage() {
       />
 
       <div className="relative w-full max-w-[400px]">
-        {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease }}
         >
-          <Link
-            href="/login"
-            className="block text-center font-[family-name:var(--font-display)] text-[2.5rem] text-[var(--text)] tracking-tight mb-12"
-          >
+          <span className="block text-center font-[family-name:var(--font-display)] text-[2.5rem] text-[var(--text)] tracking-tight mb-12">
             fitted.
-          </Link>
+          </span>
         </motion.div>
 
-        {/* Auth card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,26 +67,61 @@ export default function LoginPage() {
             className="font-[family-name:var(--font-display)] text-xl text-[var(--text)]"
             style={{ marginBottom: 8 }}
           >
-            Welcome back
+            Set up your workspace
           </h2>
           <p
             className="text-sm text-[var(--text-muted)]"
             style={{ marginBottom: 32 }}
           >
-            Sign in to your account
+            Create your organization and admin account
           </p>
 
-          <form onSubmit={handleSignIn}>
+          <form onSubmit={handleSubmit}>
+            <label
+              htmlFor="orgName"
+              className="block text-xs font-medium text-[var(--text-muted)] tracking-wide"
+              style={{ marginBottom: 10 }}
+            >
+              Organization name
+            </label>
+            <input
+              id="orgName"
+              type="text"
+              placeholder="Acme Agency"
+              required
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className="block w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm placeholder:text-[var(--text-dim)] outline-none transition-colors duration-200 focus:border-[var(--accent)]/40 focus:ring-2 focus:ring-[var(--accent)]/10"
+              style={{ height: 52, padding: "0 16px" }}
+            />
+
+            <label
+              htmlFor="fullName"
+              className="block text-xs font-medium text-[var(--text-muted)] tracking-wide"
+              style={{ marginBottom: 10, marginTop: 20 }}
+            >
+              Full name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Jane Smith"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="block w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm placeholder:text-[var(--text-dim)] outline-none transition-colors duration-200 focus:border-[var(--accent)]/40 focus:ring-2 focus:ring-[var(--accent)]/10"
+              style={{ height: 52, padding: "0 16px" }}
+            />
+
             <label
               htmlFor="email"
               className="block text-xs font-medium text-[var(--text-muted)] tracking-wide"
-              style={{ marginBottom: 10 }}
+              style={{ marginBottom: 10, marginTop: 20 }}
             >
               Email address
             </label>
             <input
               id="email"
-              name="email"
               type="email"
               placeholder="you@company.com"
               required
@@ -112,9 +140,8 @@ export default function LoginPage() {
             </label>
             <input
               id="password"
-              name="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="At least 8 characters"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -123,10 +150,7 @@ export default function LoginPage() {
             />
 
             {error && (
-              <p
-                className="text-sm text-red-400"
-                style={{ marginTop: 16 }}
-              >
+              <p className="text-sm text-red-400" style={{ marginTop: 16 }}>
                 {error}
               </p>
             )}
@@ -143,27 +167,11 @@ export default function LoginPage() {
                   style={{ width: 16, height: 16 }}
                 />
               ) : (
-                "Sign in"
+                "Create workspace"
               )}
             </button>
           </form>
         </motion.div>
-
-        {/* Footer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.7 }}
-          className="mt-8 text-center text-sm text-[var(--text-dim)] leading-relaxed"
-        >
-          Have an invite code?{" "}
-          <Link
-            href="/signup"
-            className="text-[var(--accent)] hover:underline"
-          >
-            Sign up
-          </Link>
-        </motion.p>
       </div>
     </div>
   )
