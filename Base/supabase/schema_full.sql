@@ -4,20 +4,6 @@
 -- ============================================
 
 -- ============================================
--- Helper functions (RLS, no recursion)
--- ============================================
-
-CREATE OR REPLACE FUNCTION public.get_user_org_ids()
-RETURNS SETOF uuid
-LANGUAGE sql SECURITY DEFINER STABLE SET search_path = ''
-AS $$ SELECT org_id FROM public.organization_members WHERE user_id = auth.uid() $$;
-
-CREATE OR REPLACE FUNCTION public.get_user_admin_org_ids()
-RETURNS SETOF uuid
-LANGUAGE sql SECURITY DEFINER STABLE SET search_path = ''
-AS $$ SELECT org_id FROM public.organization_members WHERE user_id = auth.uid() AND role IN ('OWNER', 'ADMIN') $$;
-
--- ============================================
 -- Enums
 -- ============================================
 
@@ -87,6 +73,21 @@ CREATE TABLE public.organization_members (
 CREATE INDEX idx_org_members_user ON public.organization_members(user_id);
 CREATE INDEX idx_org_members_org ON public.organization_members(org_id);
 CREATE INDEX idx_organizations_owner ON public.organizations(owner_id);
+
+-- ============================================
+-- Helper functions (RLS, no recursion)
+-- Must be after organization_members table
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.get_user_org_ids()
+RETURNS SETOF uuid
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = ''
+AS $$ SELECT org_id FROM public.organization_members WHERE user_id = auth.uid() $$;
+
+CREATE OR REPLACE FUNCTION public.get_user_admin_org_ids()
+RETURNS SETOF uuid
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = ''
+AS $$ SELECT org_id FROM public.organization_members WHERE user_id = auth.uid() AND role IN ('OWNER', 'ADMIN') $$;
 
 -- Invite codes
 CREATE TABLE public.invite_codes (
