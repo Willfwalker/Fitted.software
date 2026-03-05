@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { getServerContext } from "@/lib/supabase/context"
 import { DashboardShell } from "@/components/dashboard/DashboardShell"
 import { CommandKModal } from "@/components/search/CommandKModal"
 
@@ -8,22 +8,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const ctx = await getServerContext()
+  if (!ctx) redirect("/login")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect("/login")
-
-  // Get user's organization
-  const { data: membership } = await supabase
-    .from("organization_members")
-    .select("org_id, role, organizations(name)")
-    .eq("user_id", user.id)
-    .limit(1)
-    .single()
-
+  const { user } = ctx
   const meta = user.user_metadata ?? {}
   const orgName =
     meta.org_name ?? meta.company_name ?? meta.company ?? "My Agency"

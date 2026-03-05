@@ -18,6 +18,26 @@
   --text-dim: #5A534D;
   --accent: #D4734E;
   --accent-hover: #E8845D;
+
+  /* Status & Chart Colors */
+  --status-qualified: #5B8DEF;
+  --status-negotiation: #E8A84C;
+  --status-won: #5EC69A;
+  --status-lost: #EF5B5B;
+
+  /* Additional Palette */
+  --color-blue: #5B8DEF;
+  --color-green: #5EC69A;
+  --color-purple: #C97BDB;
+  --color-yellow: #F0C75E;
+  --color-orange: #E87D5F;
+  --color-lightblue: #7BAFDB;
+  --color-pink: #DB7B8A;
+  --color-lightgreen: #8ADB7B;
+  --color-mac-red: #FF5F57;
+  --color-mac-yellow: #FFBD2E;
+  --color-mac-green: #28C840;
+
   --accent-glow: rgba(212, 115, 78, 0.15);
   --border: #2A2520;
   --border-light: rgba(232, 224, 212, 0.06);
@@ -841,7 +861,7 @@
 
 .cta-success-icon {
   font-size: 2rem;
-  color: #5EC69A;
+  color: var(--color-green);
   line-height: 1;
 }
 
@@ -854,7 +874,7 @@
 .cta-error {
   font-size: 0.8rem;
   font-weight: 400;
-  color: #E87D5F;
+  color: var(--color-orange);
   text-align: center;
 }
 
@@ -982,9 +1002,9 @@
   border-radius: 50%;
 }
 
-.dash-dot:nth-child(1) { background: #FF5F57; }
-.dash-dot:nth-child(2) { background: #FFBD2E; }
-.dash-dot:nth-child(3) { background: #28C840; }
+.dash-dot:nth-child(1) { background: var(--color-mac-red); }
+.dash-dot:nth-child(2) { background: var(--color-mac-yellow); }
+.dash-dot:nth-child(3) { background: var(--color-mac-green); }
 
 .dash-chrome-title {
   font-size: 0.6rem;
@@ -1091,8 +1111,8 @@
   font-weight: 500;
 }
 
-.dash-kpi-change.positive { color: #5EC69A; }
-.dash-kpi-change.negative { color: #5B8DEF; }
+.dash-kpi-change.positive { color: var(--color-green); }
+.dash-kpi-change.negative { color: var(--color-blue); }
 
 .dash-columns {
   display: grid;

@@ -1,10 +1,11 @@
+import { cache } from "react"
 import { createClient } from "./server"
 
 /**
- * For server components: gets the supabase client, user, and org_id.
- * NOT a server action — safe to return non-serializable objects like the supabase client.
+ * Cached per-request: resolves the authenticated user and their org_id.
+ * React.cache() deduplicates across layout + page in the same render pass.
  */
-export async function getServerContext() {
+export const getServerContext = cache(async () => {
   const supabase = await createClient()
 
   const {
@@ -23,4 +24,4 @@ export async function getServerContext() {
   if (!orgId) return null
 
   return { supabase, user, orgId }
-}
+})

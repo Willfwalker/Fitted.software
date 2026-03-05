@@ -44,12 +44,12 @@ export default async function ContactDetailPage({
     .order("created_at", { ascending: false })
 
   const stageColors: Record<string, string> = {
-    LEAD: "#8A817A",
-    QUALIFIED: "#5B8DEF",
-    PROPOSAL: "#D4734E",
-    NEGOTIATION: "#E8A84C",
-    WON: "#5EC69A",
-    LOST: "#EF5B5B",
+    LEAD: "var(--text-muted)",
+    QUALIFIED: "var(--color-blue)",
+    PROPOSAL: "var(--accent)",
+    NEGOTIATION: "var(--status-negotiation)",
+    WON: "var(--color-green)",
+    LOST: "var(--status-lost)",
   }
 
   return (

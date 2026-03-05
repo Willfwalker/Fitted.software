@@ -63,3 +63,33 @@ Edit `components/dashboard/DashboardNav.tsx` and `components/dashboard/MobileNav
 
 ### Search Integration
 Add new entity types to `lib/actions/search.ts` globalSearch() and `components/search/CommandKModal.tsx`.
+
+## Testing
+
+### Quick Verification
+After any code change, run:
+```bash
+npm run check    # typecheck + all tests
+```
+
+### Individual Commands
+```bash
+npm run test         # vitest run (all tests)
+npm run test:watch   # vitest in watch mode
+npm run typecheck    # tsc --noEmit
+```
+
+### Test Structure
+```
+__tests__/
+  setup.ts                     — Global mocks (env vars, next/headers, next/cache)
+  mocks/supabase.ts            — Shared Supabase mock factory
+  validations/*.test.ts        — Pure Zod schema tests (no mocks needed)
+  actions/*.test.ts            — Server action tests (mock Supabase + getOrgId)
+```
+
+### Writing New Tests
+- **Validation schemas**: Import from `@/lib/validations/*`, use `.safeParse()`, no mocking needed
+- **Server actions**: Mock `@/lib/supabase/server` and `@/lib/actions/helpers` (see existing action tests for pattern)
+- **FormData actions**: Use `new FormData()` + `.set()` to build test inputs
+- **Direct-data actions** (invoices, forms, messages): Pass plain objects

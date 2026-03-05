@@ -36,15 +36,6 @@ export default async function SettingsPage() {
 
   return (
     <div className="p-8 lg:p-12 max-w-[600px] space-y-8">
-      <div>
-        <span className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-[var(--accent)] mb-2 block">
-          Settings
-        </span>
-        <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] text-[var(--text)] tracking-tight leading-tight">
-          Account
-        </h1>
-      </div>
-
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] divide-y divide-[var(--border)]">
         {/* Profile info */}
         <div className="px-7 py-5 flex items-center justify-between">

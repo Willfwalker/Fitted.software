@@ -210,11 +210,11 @@ function AreaChartSVG() {
 }
 
 const ACTIVITY_ITEMS = [
-  { color: "#5EC69A", text: "New client onboarded — Acme Corp", time: "2m ago" },
-  { color: "#5B8DEF", text: "Invoice #1042 paid — $4,200", time: "18m ago" },
-  { color: "#C97BDB", text: "Project milestone completed", time: "1h ago" },
-  { color: "#F0C75E", text: "Support ticket resolved #847", time: "2h ago" },
-  { color: "#E87D5F", text: "Weekly report generated", time: "5h ago" },
+  { color: "var(--color-green)", text: "New client onboarded — Acme Corp", time: "2m ago" },
+  { color: "var(--color-blue)", text: "Invoice #1042 paid — $4,200", time: "18m ago" },
+  { color: "var(--color-purple)", text: "Project milestone completed", time: "1h ago" },
+  { color: "var(--color-yellow)", text: "Support ticket resolved #847", time: "2h ago" },
+  { color: "var(--color-orange)", text: "Weekly report generated", time: "5h ago" },
 ];
 
 function DashboardMock() {
@@ -436,25 +436,25 @@ function AnimatedStat({
    ============================================ */
 
 const TOOLS = [
-  { name: "CRM", x: -30, y: -24, rotate: -10, color: "#5B8DEF" },
-  { name: "Project Mgmt", x: 26, y: -28, rotate: 7, color: "#E87D5F" },
-  { name: "Invoicing", x: -34, y: 8, rotate: -4, color: "#5EC69A" },
-  { name: "Analytics", x: 30, y: 22, rotate: 14, color: "#C97BDB" },
-  { name: "Support", x: -22, y: 28, rotate: -16, color: "#F0C75E" },
-  { name: "Documentation", x: 18, y: -10, rotate: 9, color: "#7BAFDB" },
-  { name: "Email", x: -10, y: -34, rotate: -6, color: "#DB7B8A" },
-  { name: "Communication", x: 34, y: -4, rotate: 18, color: "#8ADB7B" },
+  { name: "CRM", x: -30, y: -24, rotate: -10, color: "var(--color-blue)" },
+  { name: "Project Mgmt", x: 26, y: -28, rotate: 7, color: "var(--color-orange)" },
+  { name: "Invoicing", x: -34, y: 8, rotate: -4, color: "var(--color-green)" },
+  { name: "Analytics", x: 30, y: 22, rotate: 14, color: "var(--color-purple)" },
+  { name: "Support", x: -22, y: 28, rotate: -16, color: "var(--color-yellow)" },
+  { name: "Documentation", x: 18, y: -10, rotate: 9, color: "var(--color-lightblue)" },
+  { name: "Email", x: -10, y: -34, rotate: -6, color: "var(--color-pink)" },
+  { name: "Communication", x: 34, y: -4, rotate: 18, color: "var(--color-lightgreen)" },
 ];
 
 const TOOL_ICONS: Record<string, React.ReactNode> = {
-  CRM: <SiSalesforce size={26} color="#5B8DEF" />,
-  "Project Mgmt": <SiTrello size={26} color="#E87D5F" />,
-  Invoicing: <SiStripe size={26} color="#5EC69A" />,
-  Analytics: <SiGoogleanalytics size={26} color="#C97BDB" />,
-  Support: <SiZendesk size={26} color="#F0C75E" />,
-  Documentation: <SiNotion size={26} color="#7BAFDB" />,
-  Email: <SiGmail size={26} color="#DB7B8A" />,
-  Communication: <SiSlack size={26} color="#8ADB7B" />,
+  CRM: <SiSalesforce size={26} color="var(--color-blue)" />,
+  "Project Mgmt": <SiTrello size={26} color="var(--color-orange)" />,
+  Invoicing: <SiStripe size={26} color="var(--color-green)" />,
+  Analytics: <SiGoogleanalytics size={26} color="var(--color-purple)" />,
+  Support: <SiZendesk size={26} color="var(--color-yellow)" />,
+  Documentation: <SiNotion size={26} color="var(--color-lightblue)" />,
+  Email: <SiGmail size={26} color="var(--color-pink)" />,
+  Communication: <SiSlack size={26} color="var(--color-lightgreen)" />,
 };
 
 function TransformSection() {

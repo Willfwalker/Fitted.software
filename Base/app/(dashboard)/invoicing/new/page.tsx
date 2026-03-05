@@ -33,15 +33,6 @@ export default async function NewInvoicePage({
 
   return (
     <div className="p-8 lg:p-12 max-w-[1400px] space-y-6">
-      <div>
-        <span className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-[var(--accent)] mb-2 block">
-          Invoicing
-        </span>
-        <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] text-[var(--text)] tracking-tight leading-tight">
-          New Invoice
-        </h1>
-      </div>
-
       <InvoiceForm
         contacts={contactsRes.data ?? []}
         companies={companiesRes.data ?? []}

@@ -86,18 +86,6 @@ export default async function ReportsPage() {
 
   return (
     <div className="p-8 lg:p-12 max-w-[1400px] space-y-6">
-      <div>
-        <span className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-[var(--accent)] mb-2 block">
-          Analytics
-        </span>
-        <h1 className="font-[family-name:var(--font-display)] text-[2.2rem] text-[var(--text)] tracking-tight leading-tight">
-          Reports
-        </h1>
-        <p className="mt-2 text-[0.85rem] text-[var(--text-muted)] font-light">
-          Overview of your CRM performance
-        </p>
-      </div>
-
       <ReportsView
         revenueData={revenueData}
         pipelineData={pipelineData}
