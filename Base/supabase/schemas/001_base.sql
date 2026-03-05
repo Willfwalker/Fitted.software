@@ -12,6 +12,7 @@ create table public.organizations (
   name        text not null,
   slug        text unique not null,
   owner_id    uuid not null references auth.users(id) on delete cascade,
+  enabled_modules jsonb not null default '["crm","tasks","calendar","invoicing","messaging","files","forms","reports"]',
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );

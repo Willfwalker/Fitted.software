@@ -2,39 +2,27 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  LayoutDashboard,
-  Users,
-  FolderKanban,
-  CalendarDays,
-  Receipt,
-  BarChart3,
-  Settings,
-  Paperclip,
-  MessageSquare,
-  ClipboardList,
-} from "lucide-react"
+import { LayoutDashboard, Settings } from "lucide-react"
+import { ALL_MODULES, getEnabledModules, type ModuleKey } from "@/lib/config/modules"
 
 interface DashboardNavProps {
   orgName: string
   userName: string | null | undefined
   userEmail: string | null | undefined
+  enabledModules?: ModuleKey[]
 }
 
-const navItems: { href: string; label: string; icon: React.ElementType; disabled?: boolean }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/crm/contacts", label: "CRM", icon: Users },
-  { href: "/tasks", label: "Projects", icon: FolderKanban },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/invoicing", label: "Invoices", icon: Receipt },
-  { href: "/messages", label: "Messages", icon: MessageSquare },
-  { href: "/files", label: "Files", icon: Paperclip },
-  { href: "/forms", label: "Forms", icon: ClipboardList },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-]
-
-export function DashboardNav({ orgName, userName, userEmail }: DashboardNavProps) {
+export function DashboardNav({ orgName, userName, userEmail, enabledModules }: DashboardNavProps) {
   const pathname = usePathname()
+
+  const modules = enabledModules
+    ? getEnabledModules(enabledModules)
+    : ALL_MODULES
+
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ...modules.map((m) => ({ href: m.href, label: m.label, icon: m.icon })),
+  ]
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard"
@@ -72,15 +60,11 @@ export function DashboardNav({ orgName, userName, userEmail }: DashboardNavProps
           return (
             <Link
               key={item.label}
-              href={item.disabled ? "#" : item.href}
+              href={item.href}
               className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[0.84rem] transition-all duration-200 ${active
                   ? "bg-[rgba(212,115,78,0.08)] text-[var(--text)]"
-                  : item.disabled
-                    ? "text-[var(--text-dim)] opacity-40 pointer-events-none"
-                    : "text-[var(--text-muted)] hover:bg-[rgba(232,224,212,0.03)] hover:text-[var(--text)]"
+                  : "text-[var(--text-muted)] hover:bg-[rgba(232,224,212,0.03)] hover:text-[var(--text)]"
                 }`}
-              aria-disabled={item.disabled}
-              tabIndex={item.disabled ? -1 : undefined}
             >
               <item.icon
                 className={`h-[17px] w-[17px] shrink-0 ${active ? "text-[var(--accent)]" : ""

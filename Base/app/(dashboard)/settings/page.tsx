@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { SignOutButton } from "@/components/dashboard/SignOutButton"
 import { TagManager } from "@/components/tags/TagManager"
+import { ModuleToggle } from "@/components/settings/ModuleToggle"
+import { DEFAULT_ENABLED_MODULES, type ModuleKey } from "@/lib/config/modules"
 import type { Tag } from "@/lib/types/crm"
 
 export default async function SettingsPage() {
@@ -16,7 +18,7 @@ export default async function SettingsPage() {
   const name =
     user.user_metadata?.full_name ?? user.user_metadata?.name ?? "User"
 
-  // Get org for tags
+  // Get org for tags + modules
   const { data: membership } = await supabase
     .from("organization_members")
     .select("org_id, role")
@@ -25,6 +27,8 @@ export default async function SettingsPage() {
     .single()
 
   let tags: Tag[] = []
+  let enabledModules: ModuleKey[] = DEFAULT_ENABLED_MODULES
+
   if (membership?.org_id) {
     const { data } = await supabase
       .from("tags")
@@ -32,6 +36,16 @@ export default async function SettingsPage() {
       .eq("org_id", membership.org_id)
       .order("name")
     tags = (data ?? []) as Tag[]
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("enabled_modules")
+      .eq("id", membership.org_id)
+      .single()
+
+    if (org?.enabled_modules && Array.isArray(org.enabled_modules)) {
+      enabledModules = org.enabled_modules as ModuleKey[]
+    }
   }
 
   return (
@@ -49,6 +63,11 @@ export default async function SettingsPage() {
         <div className="px-7 py-5">
           <SignOutButton />
         </div>
+      </div>
+
+      {/* Modules */}
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
+        <ModuleToggle enabledModules={enabledModules} />
       </div>
 
       {/* Tags */}
