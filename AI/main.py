@@ -255,7 +255,7 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
             # ── 1. Clone (inject token so private repos authenticate) ──
             if github_token and "github.com" in repo_url:
                 auth_url = repo_url.replace(
-                    "https://github.com", f"https://x-access-token:{github_token}@github.com"
+                    "https://github.com", f"https://Willfwalker:{github_token}@github.com"
                 )
             else:
                 auth_url = repo_url
