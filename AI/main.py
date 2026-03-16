@@ -14,10 +14,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-import re as _re
-import urllib.request
-import urllib.error
-
 import anthropic
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -236,50 +232,6 @@ def _execute_agent(workspace: str, task_prompt: str) -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Vercel deploy helper — trigger deployment via API (bypasses commit-author check)
-# ---------------------------------------------------------------------------
-def _trigger_vercel_deploy(repo_url: str, branch: str = "main"):
-    """Create a Vercel deployment via the REST API."""
-    vercel_token = os.environ.get("VERCEL_TOKEN", "")
-    if not vercel_token:
-        logger.warning("VERCEL_TOKEN not set — skipping Vercel deploy trigger")
-        return
-
-    # Extract "Owner/repo" from the repo URL
-    match = _re.search(r"github\.com[/:]([^/]+/[^/.]+)", repo_url)
-    if not match:
-        logger.warning("Could not parse repo from URL %s — skipping deploy trigger", repo_url)
-        return
-    repo = match.group(1)
-
-    payload = json.dumps({
-        "name": repo.split("/")[-1],
-        "gitSource": {
-            "type": "github",
-            "repo": repo,
-            "ref": branch,
-        },
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.vercel.com/v13/deployments",
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {vercel_token}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            logger.info("Vercel deploy triggered: %s", resp.read().decode()[:200])
-    except urllib.error.HTTPError as e:
-        logger.error("Vercel deploy API error %s: %s", e.code, e.read().decode()[:300])
-    except Exception as e:
-        logger.error("Vercel deploy trigger failed: %s", e)
-
-
-# ---------------------------------------------------------------------------
 # Remote mode (production) — clone → execute → push/PR
 # ---------------------------------------------------------------------------
 def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
@@ -309,8 +261,8 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
                 auth_url = repo_url
             _run(["git", "clone", auth_url, "."], cwd=workspace)
 
-            # Configure git identity — use GitHub noreply so Vercel recognizes the author
-            _run(["git", "config", "user.email", "134498788+Willfwalker@users.noreply.github.com"], cwd=workspace)
+            # Configure git identity — must match the Vercel account owner's GitHub email
+            _run(["git", "config", "user.email", "willfwalker@gmail.com"], cwd=workspace)
             _run(["git", "config", "user.name", "Willfwalker"], cwd=workspace)
 
             # Set the remote to the authenticated URL for push
@@ -349,10 +301,9 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
                 cwd=workspace,
             )
 
-            # ── 5. Push + deploy + finalize (mode-dependent) ─────────
+            # ── 5. Push + finalize (mode-dependent) ──────────────────
             if mode == "easy":
                 _run(["git", "push", "origin", "main"], cwd=workspace)
-                _trigger_vercel_deploy(repo_url, "main")
                 jobs[job_id]["status"] = "complete"
                 jobs[job_id]["detail"] = {
                     "branch": "main",
@@ -362,7 +313,6 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
                 logger.info("Job %s complete (easy mode) — pushed to main", job_id)
             else:
                 _run(["git", "push", "-u", "origin", branch], cwd=workspace)
-                _trigger_vercel_deploy(repo_url, branch)
                 pr_body = f"## AI Agent Task\n\n{task_prompt}\n\n## Plan\n\n{plan_text}"
                 pr_out = _run(
                     [
