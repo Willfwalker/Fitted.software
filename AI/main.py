@@ -261,9 +261,9 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
                 auth_url = repo_url
             _run(["git", "clone", auth_url, "."], cwd=workspace)
 
-            # Configure git identity and auth for push
-            _run(["git", "config", "user.email", "agent@fittedagency.com"], cwd=workspace)
-            _run(["git", "config", "user.name", "Fitted AI Agent"], cwd=workspace)
+            # Configure git identity — use GitHub noreply so Vercel recognizes the author
+            _run(["git", "config", "user.email", "134498788+Willfwalker@users.noreply.github.com"], cwd=workspace)
+            _run(["git", "config", "user.name", "Willfwalker"], cwd=workspace)
 
             # Set the remote to the authenticated URL for push
             _run(["git", "config", "credential.helper", "store"], cwd=workspace)
