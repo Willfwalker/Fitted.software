@@ -22,6 +22,9 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 # ── Claude Code CLI ─────────────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
 
+# ── Non-root user (Claude CLI refuses --dangerously-skip-permissions as root)
+RUN useradd -m -s /bin/bash agent
+
 # ── Python app ───────────────────────────────────────────────────────────────
 WORKDIR /app
 
@@ -30,6 +33,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 COPY system-prompt.md .
+
+RUN chown -R agent:agent /app
+
+USER agent
 
 EXPOSE 10000
 
