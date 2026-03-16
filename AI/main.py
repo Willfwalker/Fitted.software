@@ -252,8 +252,14 @@ def run_agent_remote(job_id: str, repo_url: str, task_prompt: str):
 
     with tempfile.TemporaryDirectory(prefix="agent-") as workspace:
         try:
-            # ── 1. Clone ─────────────────────────────────────────────
-            _run(["git", "clone", repo_url, "."], cwd=workspace)
+            # ── 1. Clone (inject token so private repos authenticate) ──
+            if github_token and "github.com" in repo_url:
+                auth_url = repo_url.replace(
+                    "https://github.com", f"https://x-access-token:{github_token}@github.com"
+                )
+            else:
+                auth_url = repo_url
+            _run(["git", "clone", auth_url, "."], cwd=workspace)
 
             # Configure git identity and auth for push
             _run(["git", "config", "user.email", "agent@fittedagency.com"], cwd=workspace)
