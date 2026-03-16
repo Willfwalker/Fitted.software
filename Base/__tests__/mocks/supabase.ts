@@ -68,7 +68,7 @@ export const TEST_ORG_ID = 'test-org-id'
 export const TEST_USER_ID = 'test-user-id'
 
 export function mockGetOrgId() {
-  return vi.fn().mockResolvedValue({ orgId: TEST_ORG_ID, userId: TEST_USER_ID })
+  return vi.fn().mockResolvedValue({ orgId: TEST_ORG_ID, userId: TEST_USER_ID, role: 'OWNER' })
 }
 
 export function mockGetOrgIdNull() {

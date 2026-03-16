@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   const ctx = await getServerContext()
   if (!ctx) redirect("/login")
 
-  const { supabase, user, orgId } = ctx
+  const { supabase, user, orgId, role } = ctx
   const meta = user.user_metadata ?? {}
   const orgName =
     meta.org_name ?? meta.company_name ?? meta.company ?? "My Agency"
@@ -40,6 +40,7 @@ export default async function DashboardLayout({
         userName={userName}
         userEmail={userEmail}
         enabledModules={enabledModules}
+        userRole={role}
       >
         {children}
       </DashboardShell>

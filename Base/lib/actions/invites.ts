@@ -1,7 +1,6 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
-import { getOrgId } from "./helpers"
+import { requirePermission } from "@/lib/rbac/require"
 import { revalidatePath } from "next/cache"
 import crypto from "crypto"
 
@@ -9,27 +8,8 @@ function generateCode(): string {
   return crypto.randomBytes(4).toString("hex").toUpperCase().replace(/(.{4})(.{4})/, "$1-$2")
 }
 
-async function requireAdmin() {
-  const supabase = await createClient()
-  const ctx = await getOrgId()
-  if (!ctx) throw new Error("Not authenticated")
-
-  const { data: member } = await supabase
-    .from("organization_members")
-    .select("role")
-    .eq("org_id", ctx.orgId)
-    .eq("user_id", ctx.userId)
-    .single()
-
-  if (!member || !["OWNER", "ADMIN"].includes(member.role)) {
-    throw new Error("Insufficient permissions")
-  }
-
-  return { supabase, ctx }
-}
-
 export async function createInviteCode() {
-  const { supabase, ctx } = await requireAdmin()
+  const { supabase, ctx } = await requirePermission("invite_codes:manage")
 
   const code = generateCode()
   const { error } = await supabase
@@ -47,7 +27,7 @@ export async function createInviteCode() {
 }
 
 export async function getInviteCodes() {
-  const { supabase, ctx } = await requireAdmin()
+  const { supabase, ctx } = await requirePermission("invite_codes:manage")
 
   const { data, error } = await supabase
     .from("invite_codes")
@@ -60,7 +40,7 @@ export async function getInviteCodes() {
 }
 
 export async function deleteInviteCode(id: string) {
-  const { supabase } = await requireAdmin()
+  const { supabase } = await requirePermission("invite_codes:manage")
 
   const { error } = await supabase
     .from("invite_codes")

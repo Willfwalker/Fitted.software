@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
-import { createNotification } from "./notifications"
+import { notifyOrgMembers } from "./notifications"
 import type { FormSubmission } from "@/lib/types/forms"
 
 export type SubmissionActionState = {
@@ -85,9 +85,10 @@ export async function processSubmissionNotification(
   createdBy: string,
   submissionId: string
 ) {
-  await createNotification({
-    userId: createdBy,
+  await notifyOrgMembers({
     orgId,
+    performerUserId: createdBy,
+    category: "form_submission",
     title: "New form submission",
     body: `Someone submitted "${formName}"`,
     link: `/forms/${formId}/submissions`,

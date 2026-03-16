@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { composeMessageSchema } from "@/lib/validations/messaging"
-import { createNotification } from "./notifications"
+import { notifyOrgMembers } from "./notifications"
 import { Resend } from "resend"
 import type { Message, MessageStatus } from "@/lib/types/messaging"
 
@@ -113,10 +113,11 @@ export async function sendMessage(
     created_by: ctx.userId,
   })
 
-  // Notify sender of delivery
-  await createNotification({
-    userId: ctx.userId,
+  // Notify org members of delivery
+  await notifyOrgMembers({
     orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "message",
     title: "Message delivered",
     body: `Email to ${d.recipient_name || d.recipient_email} was delivered`,
     link: "/messages",

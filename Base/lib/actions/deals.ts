@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
+import { requirePermission } from "@/lib/rbac/require"
 import { dealSchema } from "@/lib/validations/crm"
+import { notifyOrgMembers } from "./notifications"
 import type { DealStage } from "@/lib/types/crm"
 
 export type DealActionState = {
@@ -71,6 +73,17 @@ export async function createDeal(
     title: `Created deal "${data.title}"`,
     metadata: { value: data.value, stage: data.stage },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "deal",
+    title: `New deal: "${data.title}"`,
+    link: "/crm/deals",
+    icon: "Handshake",
+    sourceType: "deal",
+    sourceId: deal.id,
   })
 
   revalidatePath("/crm/deals")
@@ -170,6 +183,17 @@ export async function moveDealStage(
       metadata: { from: oldStage, to: newStage },
       created_by: ctx.userId,
     })
+
+    await notifyOrgMembers({
+      orgId: ctx.orgId,
+      performerUserId: ctx.userId,
+      category: "deal",
+      title: `Deal stage changed: "${deal.title}" → ${newStage}`,
+      link: "/crm/deals",
+      icon: "Handshake",
+      sourceType: "deal",
+      sourceId: dealId,
+    })
   }
 
   revalidatePath("/crm/deals")
@@ -177,10 +201,13 @@ export async function moveDealStage(
 }
 
 export async function deleteDeal(id: string): Promise<DealActionState> {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
-  const supabase = await createClient()
+  let permResult
+  try {
+    permResult = await requirePermission("records:delete")
+  } catch {
+    return { error: "Insufficient permissions" }
+  }
+  const { supabase, ctx } = permResult
 
   const { error } = await supabase
     .from("deals")

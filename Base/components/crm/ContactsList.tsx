@@ -40,9 +40,10 @@ interface ContactsListProps {
   companies: { id: string; name: string }[]
   searchQuery: string
   currentSort?: string
+  canDelete?: boolean
 }
 
-export function ContactsList({ contacts, companies, searchQuery, currentSort }: ContactsListProps) {
+export function ContactsList({ contacts, companies, searchQuery, currentSort, canDelete = true }: ContactsListProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState(searchQuery)
@@ -232,13 +233,15 @@ export function ContactsList({ contacts, companies, searchQuery, currentSort }: 
                           <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(contact) }}
-                          className="text-red-400 focus:text-red-300 focus:bg-[rgba(232,224,212,0.05)]"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
+                        {canDelete && (
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(contact) }}
+                            className="text-red-400 focus:text-red-300 focus:bg-[rgba(232,224,212,0.05)]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -250,7 +253,7 @@ export function ContactsList({ contacts, companies, searchQuery, currentSort }: 
       )}
 
       {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
+      {canDelete && selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 rounded-full bg-[var(--bg-card)] border border-[var(--border)] shadow-lg">
           <span className="text-[0.85rem] text-[var(--text)] font-light">
             {selectedIds.size} selected

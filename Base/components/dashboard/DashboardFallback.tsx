@@ -146,28 +146,7 @@ export async function DashboardFallback({
     }))
   }
 
-  const mockMembers = [
-    {
-      id: "mock-1",
-      role: "DESIGNER",
-      user: { name: "Sarah Chen", email: "sarah@fitted.agency", image: null },
-    },
-    {
-      id: "mock-2",
-      role: "DEVELOPER",
-      user: {
-        name: "Marcus Rivera",
-        email: "marcus@fitted.agency",
-        image: null,
-      },
-    },
-    {
-      id: "mock-3",
-      role: "PM",
-      user: { name: "Emily Park", email: "emily@fitted.agency", image: null },
-    },
-  ]
-  const members = [...dbMembers, ...mockMembers]
+  const members = dbMembers
 
   const greeting = getGreeting()
   const firstName =

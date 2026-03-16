@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { invoiceSchema, sendInvoiceEmailSchema } from "@/lib/validations/crm"
+import { notifyOrgMembers } from "./notifications"
 import { renderToBuffer } from "@react-pdf/renderer"
 import { InvoicePDFDocument } from "@/lib/pdf/invoice-template"
 import { buildInvoiceEmailHtml } from "@/lib/email/invoice-email"
@@ -126,6 +127,17 @@ export async function createInvoice(
     title: `Created invoice ${numResult}`,
     metadata: { invoice_id: invoice.id, total: calc.total },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "invoice",
+    title: `New invoice: ${numResult}`,
+    link: `/invoicing/${invoice.id}`,
+    icon: "FileText",
+    sourceType: "invoice",
+    sourceId: invoice.id,
   })
 
   revalidatePath("/invoicing")
@@ -259,6 +271,17 @@ export async function updateInvoiceStatus(
     title: `Invoice ${invoice.invoice_number} marked as ${newStatus}`,
     metadata: { invoice_id: id, from: invoice.status, to: newStatus },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "invoice",
+    title: `Invoice ${invoice.invoice_number} marked as ${newStatus}`,
+    link: `/invoicing/${id}`,
+    icon: "FileText",
+    sourceType: "invoice",
+    sourceId: id,
   })
 
   revalidatePath("/invoicing")
@@ -541,6 +564,17 @@ export async function sendInvoiceEmail(data: {
     title: `Invoice ${invoice.invoice_number} sent to ${recipientEmail}`,
     metadata: { invoice_id: invoiceId, recipient: recipientEmail },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "invoice",
+    title: `Invoice ${invoice.invoice_number} sent to ${recipientEmail}`,
+    link: `/invoicing/${invoiceId}`,
+    icon: "FileText",
+    sourceType: "invoice",
+    sourceId: invoiceId,
   })
 
   revalidatePath("/invoicing")

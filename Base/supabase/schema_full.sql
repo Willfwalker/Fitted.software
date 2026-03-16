@@ -351,6 +351,19 @@ CREATE INDEX idx_notifications_user_status ON public.notifications(user_id, stat
 CREATE INDEX idx_notifications_org ON public.notifications(org_id);
 CREATE INDEX idx_notifications_created ON public.notifications(user_id, created_at DESC);
 
+CREATE TABLE public.notification_preferences (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  category text NOT NULL,
+  enabled boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (org_id, user_id, category)
+);
+ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
+CREATE TRIGGER set_notification_preferences_updated_at BEFORE UPDATE ON public.notification_preferences FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
 -- ============================================
 -- Files
 -- ============================================
@@ -683,3 +696,57 @@ CREATE POLICY "Anyone can submit to forms" ON public.form_submissions FOR INSERT
 CREATE POLICY "Org members can view chat messages" ON public.chat_messages FOR SELECT USING (org_id IN (SELECT public.get_user_org_ids()));
 CREATE POLICY "Org members can insert chat messages" ON public.chat_messages FOR INSERT WITH CHECK (org_id IN (SELECT public.get_user_org_ids()));
 CREATE POLICY "Org members can update chat messages" ON public.chat_messages FOR UPDATE USING (org_id IN (SELECT public.get_user_org_ids()));
+
+-- Notification preferences
+CREATE POLICY "Users can view own notification preferences" ON public.notification_preferences FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own notification preferences" ON public.notification_preferences FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own notification preferences" ON public.notification_preferences FOR UPDATE USING (user_id = auth.uid());
+
+-- ============================================================================
+-- FUNCTIONS
+-- ============================================================================
+
+-- Get org members (joins with auth.users for email/name)
+CREATE OR REPLACE FUNCTION public.get_org_members(target_org_id uuid)
+RETURNS TABLE (
+  member_id uuid,
+  user_id uuid,
+  email text,
+  full_name text,
+  role text,
+  joined_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organization_members om
+    WHERE om.org_id = target_org_id
+      AND om.user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Not a member of this organization';
+  END IF;
+
+  RETURN QUERY
+    SELECT
+      om.id AS member_id,
+      om.user_id,
+      u.email::text,
+      COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', '')::text AS full_name,
+      om.role::text,
+      om.created_at AS joined_at
+    FROM public.organization_members om
+    JOIN auth.users u ON u.id = om.user_id
+    WHERE om.org_id = target_org_id
+    ORDER BY
+      CASE om.role
+        WHEN 'OWNER' THEN 0
+        WHEN 'ADMIN' THEN 1
+        WHEN 'MEMBER' THEN 2
+        ELSE 3
+      END,
+      om.created_at ASC;
+END;
+$$;

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Send, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -9,39 +9,29 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet"
-import { ChatMessageBubble } from "@/components/chat/ChatMessage"
-import { getChatMessages } from "@/lib/actions/chat"
-import type { ChatMessage } from "@/lib/types/chat"
+import { FeatureRequestForm } from "@/components/chat/FeatureRequestForm"
+import { RequestStatus } from "@/components/chat/RequestStatus"
+import { RequestHistory } from "@/components/chat/RequestHistory"
+import { buildPrompt } from "@/lib/chat/build-prompt"
+import { assessDifficulty } from "@/lib/chat/assess-difficulty"
+import type { FeatureRequest, ChatJobStatus, DifficultyAssessment } from "@/lib/types/chat"
 
 interface ChatPanelProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+type PanelView = "form" | "status" | "history"
+
 export function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState("")
-  const [sending, setSending] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState<PanelView>("form")
+  const [submitting, setSubmitting] = useState(false)
+  const [jobStatus, setJobStatus] = useState<ChatJobStatus>("pending")
+  const [summary, setSummary] = useState<string | null>(null)
+  const [prUrl, setPrUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [difficulty, setDifficulty] = useState<DifficultyAssessment | null>(null)
   const pollRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Load chat history when panel opens
-  useEffect(() => {
-    if (open && !loaded) {
-      getChatMessages().then(({ data }) => {
-        if (data) setMessages(data)
-        setLoaded(true)
-      })
-    }
-  }, [open, loaded])
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [messages])
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -50,7 +40,7 @@ export function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     }
   }, [])
 
-  const pollJobStatus = useCallback((jobId: string, statusMessageId: string) => {
+  const pollJobStatus = useCallback((jobId: string) => {
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/chat/${jobId}`)
@@ -59,29 +49,20 @@ export function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
         const data = await res.json()
         const terminal = ["complete", "rejected", "failed"].includes(data.status)
 
+        setJobStatus(data.status)
+
         if (terminal) {
           if (pollRef.current) clearInterval(pollRef.current)
           pollRef.current = null
 
-          // Update status message → assistant message with result
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === statusMessageId
-                ? {
-                    ...m,
-                    role: "assistant" as const,
-                    content:
-                      data.status === "complete"
-                        ? data.summary || "Changes applied successfully."
-                        : data.status === "rejected"
-                          ? data.reason || "Request was not approved."
-                          : data.error || "Something went wrong.",
-                    job_status: data.status,
-                    job_detail: data.pr_url ? { pr_url: data.pr_url } : null,
-                  }
-                : m
-            )
-          )
+          if (data.status === "complete") {
+            setSummary(data.summary || "Changes applied successfully.")
+            setPrUrl(data.pr_url || null)
+          } else if (data.status === "rejected") {
+            setError(data.reason || "Request was not approved.")
+          } else {
+            setError(data.error || "Something went wrong.")
+          }
         }
       } catch {
         // Silently retry on next interval
@@ -89,84 +70,67 @@ export function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
     }, 3000)
   }, [])
 
-  async function handleSend() {
-    const trimmed = input.trim()
-    if (!trimmed || sending) return
+  async function handleSubmit(request: FeatureRequest) {
+    setSubmitting(true)
 
-    setSending(true)
-    setInput("")
+    const taskPrompt = buildPrompt(request)
 
-    // Optimistic user message
-    const tempUserMsg: ChatMessage = {
-      id: `temp-${Date.now()}`,
-      org_id: "",
-      created_by: "",
-      role: "user",
-      content: trimmed,
-      job_id: null,
-      job_status: null,
-      job_detail: null,
-      created_at: new Date().toISOString(),
-    }
-    setMessages((prev) => [...prev, tempUserMsg])
+    // Assess difficulty immediately based on feature type
+    const assessment = assessDifficulty(request)
+    setDifficulty(assessment)
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ message: taskPrompt, featureRequest: request }),
       })
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Request failed" }))
-        setMessages((prev) => [
-          ...prev,
-          {
-            ...tempUserMsg,
-            id: `err-${Date.now()}`,
-            role: "assistant",
-            content: err.error || "Something went wrong.",
-            job_status: "failed",
-          },
-        ])
-        setSending(false)
+        setError(err.error || "Something went wrong.")
+        setJobStatus("failed")
+        setView("status")
+        setSubmitting(false)
         return
       }
 
-      const { jobId, statusMessageId } = await res.json()
+      const data = await res.json()
 
-      // Add status message
-      const statusMsg: ChatMessage = {
-        id: statusMessageId || `status-${Date.now()}`,
-        org_id: "",
-        created_by: "",
-        role: "status",
-        content: "Working on it...",
-        job_id: jobId,
-        job_status: "running",
-        job_detail: null,
-        created_at: new Date().toISOString(),
-      }
-      setMessages((prev) => [...prev, statusMsg])
+      // Switch to status view
+      setJobStatus("running")
+      setSummary(null)
+      setPrUrl(null)
+      setError(null)
+      setView("status")
 
-      // Start polling
-      if (jobId) {
-        pollJobStatus(jobId, statusMsg.id)
+      if (data.jobId) {
+        pollJobStatus(data.jobId)
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          ...tempUserMsg,
-          id: `err-${Date.now()}`,
-          role: "assistant",
-          content: "Failed to send message. Please try again.",
-          job_status: "failed",
-        },
-      ])
+      setError("Failed to submit request. Please try again.")
+      setJobStatus("failed")
+      setView("status")
     } finally {
-      setSending(false)
+      setSubmitting(false)
     }
+  }
+
+  function handleNewRequest() {
+    if (pollRef.current) clearInterval(pollRef.current)
+    pollRef.current = null
+    setView("form")
+    setJobStatus("pending")
+    setSummary(null)
+    setPrUrl(null)
+    setError(null)
+    setDifficulty(null)
+  }
+
+  const descriptions: Record<PanelView, string> = {
+    form: "Tell us what you need and the AI will build it for you.",
+    status: "Your request is being processed.",
+    history: "View your past feature requests.",
   }
 
   return (
@@ -174,63 +138,64 @@ export function ChatPanel({ open, onOpenChange }: ChatPanelProps) {
       <SheetContent
         side="right"
         showCloseButton
-        className="sm:max-w-md w-full flex flex-col bg-[var(--bg)] border-[var(--border)]"
+        className="sm:max-w-md w-full flex flex-col gap-0 overflow-hidden bg-[var(--bg)] border-[var(--border)]"
       >
-        <SheetHeader className="border-b border-[var(--border)] pb-3">
+        <SheetHeader className="border-b border-[var(--border)] pb-0">
           <SheetTitle className="flex items-center gap-2 text-[var(--text)]">
             <Sparkles className="size-4 text-[var(--accent)]" />
             Add a Feature
           </SheetTitle>
           <SheetDescription className="text-[var(--text-muted)] text-xs">
-            Describe what you want and the AI will build it for you.
+            {descriptions[view]}
           </SheetDescription>
-        </SheetHeader>
 
-        {/* Messages */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0"
-        >
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-[var(--text-dim)]">
-              <Sparkles className="size-8 mb-3 text-[var(--accent)] opacity-50" />
-              <p className="text-sm">No messages yet.</p>
-              <p className="text-xs mt-1">
-                Describe a feature and the AI will implement it.
-              </p>
+          {/* Tabs */}
+          {view !== "status" && (
+            <div className="flex gap-0 mt-2">
+              <button
+                type="button"
+                onClick={() => setView("form")}
+                className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                  view === "form"
+                    ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
+                    : "text-[var(--text-dim)] hover:text-[var(--text-muted)] border-b-2 border-transparent"
+                }`}
+              >
+                New Request
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("history")}
+                className={`px-4 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                  view === "history"
+                    ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
+                    : "text-[var(--text-dim)] hover:text-[var(--text-muted)] border-b-2 border-transparent"
+                }`}
+              >
+                Past Requests
+              </button>
             </div>
           )}
-          {messages.map((msg) => (
-            <ChatMessageBubble key={msg.id} message={msg} />
-          ))}
-        </div>
+        </SheetHeader>
 
-        {/* Input */}
-        <div className="border-t border-[var(--border)] p-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSend()
-            }}
-            className="flex gap-2"
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe a feature..."
-              disabled={sending}
-              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)] disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={sending || !input.trim()}
-              className="rounded-lg bg-[var(--accent)] p-2 text-white hover:opacity-90 transition-opacity disabled:opacity-40"
-            >
-              <Send className="size-4" />
-            </button>
-          </form>
-        </div>
+        {view === "form" && (
+          <FeatureRequestForm onSubmit={handleSubmit} submitting={submitting} />
+        )}
+
+        {view === "status" && (
+          <RequestStatus
+            status={jobStatus}
+            summary={summary}
+            prUrl={prUrl}
+            error={error}
+            difficulty={difficulty}
+            onNewRequest={handleNewRequest}
+          />
+        )}
+
+        {view === "history" && (
+          <RequestHistory onNewRequest={() => setView("form")} />
+        )}
       </SheetContent>
     </Sheet>
   )

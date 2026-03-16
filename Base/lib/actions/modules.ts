@@ -1,19 +1,15 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
-import { getOrgId } from "./helpers"
+import { requirePermission } from "@/lib/rbac/require"
 import { revalidatePath } from "next/cache"
 import { ALL_MODULES, ALL_MODULE_KEYS, type ModuleKey } from "@/lib/config/modules"
 
 export async function updateEnabledModules(modules: ModuleKey[]) {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
   // Validate all keys are real module keys
   const valid = modules.every((k) => ALL_MODULE_KEYS.includes(k))
   if (!valid) return { error: "Invalid module key" }
 
-  const supabase = await createClient()
+  const { supabase, ctx } = await requirePermission("modules:toggle")
   const { error } = await supabase
     .from("organizations")
     .update({ enabled_modules: modules })

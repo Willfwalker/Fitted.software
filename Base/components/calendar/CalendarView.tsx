@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useNextCalendarApp, ScheduleXCalendar } from "@schedule-x/react"
 import {
@@ -13,6 +13,7 @@ import { createEventsServicePlugin } from "@schedule-x/events-service"
 import { createDragAndDropPlugin } from "@schedule-x/drag-and-drop"
 import "temporal-polyfill/global"
 import "@schedule-x/theme-default/dist/index.css"
+import { createPortal } from "react-dom"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EventForm } from "./EventForm"
@@ -84,8 +85,34 @@ export function CalendarView({
   }>({})
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [editEvent, setEditEvent] = useState<CalendarEvent | null>(null)
+  const calendarRef = useRef<HTMLDivElement>(null)
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   const eventsService = useState(() => createEventsServicePlugin())[0]
+
+  // Inject a portal container into the Schedule-X header, before the view selector
+  useEffect(() => {
+    const el = calendarRef.current
+    if (!el) return
+    const tryInject = () => {
+      const viewSelection = el.querySelector(".sx__view-selection")
+      if (!viewSelection || !viewSelection.parentElement) return false
+      // Avoid duplicate injection
+      if (el.querySelector("[data-add-event-portal]")) return true
+      const container = document.createElement("div")
+      container.setAttribute("data-add-event-portal", "")
+      viewSelection.parentElement.insertBefore(container, viewSelection)
+      setPortalTarget(container)
+      return true
+    }
+    if (tryInject()) return
+    // Schedule-X may render async; observe for header appearance
+    const observer = new MutationObserver(() => {
+      if (tryInject()) observer.disconnect()
+    })
+    observer.observe(el, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
 
   // Blend hex with dark bg to get a solid container color
   function blendWithDark(hex: string, mix: number): string {
@@ -195,25 +222,27 @@ export function CalendarView({
       {/* eslint-disable-next-line react/no-danger -- trusted DB content, sanitized with regex */}
       <style dangerouslySetInnerHTML={{ __html: eventStyles }} />
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-end">
-        <Button
-          onClick={() => {
-            setFormDefaults({})
-            setEditEvent(null)
-            setShowForm(true)
-          }}
-          className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg)] rounded-full px-5 text-[0.84rem] cursor-pointer"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add Event
-        </Button>
-      </div>
-
       {/* Calendar */}
-      <div className="rounded-xl border border-[var(--border)] overflow-hidden sx-fitted-calendar">
+      <div ref={calendarRef} className="rounded-xl border border-[var(--border)] overflow-hidden sx-fitted-calendar">
         <ScheduleXCalendar calendarApp={calendar} />
       </div>
+
+      {/* Add Event button — portaled into the Schedule-X header */}
+      {portalTarget &&
+        createPortal(
+          <Button
+            onClick={() => {
+              setFormDefaults({})
+              setEditEvent(null)
+              setShowForm(true)
+            }}
+            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg)] rounded-full px-4 py-1.5 text-[0.8rem] h-auto cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Add Event
+          </Button>,
+          portalTarget
+        )}
 
       {/* Event form dialog */}
       <EventForm

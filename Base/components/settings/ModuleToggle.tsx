@@ -38,7 +38,7 @@ export function ModuleToggle({ enabledModules }: ModuleToggleProps) {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
         {ALL_MODULES.map((mod) => {
           const enabled = modules.includes(mod.key)
           return (

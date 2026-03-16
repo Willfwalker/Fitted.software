@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { calendarEventSchema } from "@/lib/validations/scheduling"
+import { notifyOrgMembers } from "./notifications"
 
 export type EventActionState = {
   error?: string
@@ -62,6 +63,17 @@ export async function createEvent(
     title: `Created event "${data.title}"`,
     metadata: { event_id: event.id },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "event",
+    title: `New event: "${data.title}"`,
+    link: "/calendar",
+    icon: "Calendar",
+    sourceType: "event",
+    sourceId: event.id,
   })
 
   revalidatePath("/calendar")
@@ -141,6 +153,17 @@ export async function updateEventStatus(
       title: `Completed event "${event.title}"`,
       metadata: { event_id: id },
       created_by: ctx.userId,
+    })
+
+    await notifyOrgMembers({
+      orgId: ctx.orgId,
+      performerUserId: ctx.userId,
+      category: "event",
+      title: `Event completed: "${event.title}"`,
+      link: "/calendar",
+      icon: "Calendar",
+      sourceType: "event",
+      sourceId: id,
     })
   }
 

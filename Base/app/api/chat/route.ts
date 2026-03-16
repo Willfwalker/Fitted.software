@@ -8,12 +8,17 @@ export async function POST(request: Request) {
 
   const { data: memberships } = await supabase
     .from("organization_members")
-    .select("org_id")
+    .select("org_id, role")
     .eq("user_id", user.id)
     .limit(1)
 
   const orgId = memberships?.[0]?.org_id
+  const role = memberships?.[0]?.role
   if (!orgId) return NextResponse.json({ error: "No organization" }, { status: 403 })
+
+  if (role === "MEMBER") {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+  }
 
   const { message } = await request.json()
   if (!message || typeof message !== "string") {

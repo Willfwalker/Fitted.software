@@ -1,5 +1,6 @@
 import { getServerContext } from "@/lib/supabase/context"
 import { CompanyList } from "@/components/crm/CompanyList"
+import { hasPermission } from "@/lib/rbac/permissions"
 import type { Company } from "@/lib/types/crm"
 
 export default async function CompaniesPage({
@@ -36,11 +37,14 @@ export default async function CompaniesPage({
 
   const { data: companies } = await query
 
+  const canDelete = hasPermission(ctx.role, "records:delete")
+
   return (
     <CompanyList
       companies={(companies ?? []) as Company[]}
       searchQuery={q ?? ""}
       currentSort={sort ?? "recent"}
+      canDelete={canDelete}
     />
   )
 }

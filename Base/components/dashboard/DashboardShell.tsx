@@ -4,12 +4,14 @@ import { DashboardNav } from "./DashboardNav"
 import { MobileNav } from "./MobileNav"
 import { DashboardHeader } from "./DashboardHeader"
 import type { ModuleKey } from "@/lib/config/modules"
+import type { AppRole } from "@/lib/rbac/permissions"
 
 interface DashboardShellProps {
   orgName: string
   userName: string | null | undefined
   userEmail: string | null | undefined
   enabledModules?: ModuleKey[]
+  userRole?: AppRole
   children: React.ReactNode
 }
 
@@ -18,6 +20,7 @@ export function DashboardShell({
   userName,
   userEmail,
   enabledModules,
+  userRole,
   children,
 }: DashboardShellProps) {
   return (
@@ -35,7 +38,7 @@ export function DashboardShell({
         enabledModules={enabledModules}
       />
       <main className="lg:pl-[260px]">
-        <DashboardHeader />
+        <DashboardHeader userRole={userRole} />
         {children}
       </main>
     </div>

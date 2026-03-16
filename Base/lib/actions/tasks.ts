@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { taskSchema } from "@/lib/validations/tasks"
+import { notifyOrgMembers, createNotification } from "./notifications"
 
 export type TaskActionState = {
   error?: string
@@ -64,6 +65,17 @@ export async function createTask(
     title: `Created task "${data.title}"`,
     metadata: { task_id: task.id, board_id: data.board_id },
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "task",
+    title: `New task: "${data.title}"`,
+    link: `/tasks/${data.board_id}`,
+    icon: "CheckSquare",
+    sourceType: "task",
+    sourceId: task.id,
   })
 
   revalidatePath(`/tasks/${data.board_id}`)
@@ -160,6 +172,17 @@ export async function moveTask(
       metadata: { task_id: taskId, from_column: oldColumnId, to_column: newColumnId },
       created_by: ctx.userId,
     })
+
+    await notifyOrgMembers({
+      orgId: ctx.orgId,
+      performerUserId: ctx.userId,
+      category: "task",
+      title: `Task moved: "${task.title}" → ${newCol?.name ?? "unknown"}`,
+      link: `/tasks/${boardId}`,
+      icon: "CheckSquare",
+      sourceType: "task",
+      sourceId: taskId,
+    })
   }
 
   revalidatePath(`/tasks/${boardId}`)
@@ -203,6 +226,19 @@ export async function assignTask(
     metadata: { task_id: taskId, assigned_to: userId },
     created_by: ctx.userId,
   })
+
+  // Direct notification to the assignee (not broadcast)
+  if (userId && userId !== ctx.userId) {
+    await createNotification({
+      userId,
+      orgId: ctx.orgId,
+      title: `You were assigned: "${task.title}"`,
+      link: `/tasks/${boardId}`,
+      icon: "CheckSquare",
+      sourceType: "task",
+      sourceId: taskId,
+    })
+  }
 
   revalidatePath(`/tasks/${boardId}`)
   return { success: true }

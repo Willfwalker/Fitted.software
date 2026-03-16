@@ -8,6 +8,7 @@ import {
   renameFileSchema,
   attachFileSchema,
 } from "@/lib/validations/files"
+import { notifyOrgMembers } from "./notifications"
 import type { FileRecord, EntityFile, FileEntityType } from "@/lib/types/files"
 
 export type FileActionState = {
@@ -321,4 +322,26 @@ export async function getDownloadUrl(
   if (error) return { error: error.message }
 
   return { url: data.signedUrl }
+}
+
+/**
+ * Notify org members about a file upload. Called from upload handler.
+ */
+export async function notifyFileUpload(
+  fileId: string,
+  fileName: string
+): Promise<void> {
+  const ctx = await getOrgId()
+  if (!ctx) return
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "file",
+    title: `File uploaded: "${fileName}"`,
+    link: "/files",
+    icon: "Paperclip",
+    sourceType: "file",
+    sourceId: fileId,
+  })
 }

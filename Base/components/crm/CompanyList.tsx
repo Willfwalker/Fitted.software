@@ -39,9 +39,10 @@ interface CompanyListProps {
   companies: Company[]
   searchQuery: string
   currentSort?: string
+  canDelete?: boolean
 }
 
-export function CompanyList({ companies, searchQuery, currentSort }: CompanyListProps) {
+export function CompanyList({ companies, searchQuery, currentSort, canDelete = true }: CompanyListProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [search, setSearch] = useState(searchQuery)
@@ -230,13 +231,15 @@ export function CompanyList({ companies, searchQuery, currentSort }: CompanyList
                           <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(company) }}
-                          className="text-red-400 focus:text-red-300 focus:bg-[rgba(232,224,212,0.05)]"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
+                        {canDelete && (
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(company) }}
+                            className="text-red-400 focus:text-red-300 focus:bg-[rgba(232,224,212,0.05)]"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -248,7 +251,7 @@ export function CompanyList({ companies, searchQuery, currentSort }: CompanyList
       )}
 
       {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
+      {canDelete && selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 rounded-full bg-[var(--bg-card)] border border-[var(--border)] shadow-lg">
           <span className="text-[0.85rem] text-[var(--text)] font-light">
             {selectedIds.size} selected

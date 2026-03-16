@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { SignOutButton } from "@/components/dashboard/SignOutButton"
-import { TagManager } from "@/components/tags/TagManager"
-import { ModuleToggle } from "@/components/settings/ModuleToggle"
-import { InviteCodeManager } from "@/components/settings/InviteCodeManager"
+import { SettingsShell } from "@/components/settings/SettingsShell"
+import { getNotificationPreferences } from "@/lib/actions/notifications"
 import { DEFAULT_ENABLED_MODULES, type ModuleKey } from "@/lib/config/modules"
+import { hasPermission, type AppRole } from "@/lib/rbac/permissions"
 import type { Tag } from "@/lib/types/crm"
+import type { OrgMember } from "@/lib/types/members"
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -27,13 +27,17 @@ export default async function SettingsPage() {
     .limit(1)
     .single()
 
+  const userRole = (membership?.role as AppRole) ?? "MEMBER"
+
   let tags: Tag[] = []
   let enabledModules: ModuleKey[] = DEFAULT_ENABLED_MODULES
   let inviteCodes: Array<{
     id: string; code: string; max_uses: number;
     use_count: number; expires_at: string | null; created_at: string
   }> = []
-  const isAdmin = membership?.role === "OWNER" || membership?.role === "ADMIN"
+  let members: OrgMember[] = []
+  const canManageInvites = hasPermission(userRole, "invite_codes:manage")
+  const canToggleModules = hasPermission(userRole, "modules:toggle")
 
   if (membership?.org_id) {
     const { data } = await supabase
@@ -53,7 +57,7 @@ export default async function SettingsPage() {
       enabledModules = org.enabled_modules as ModuleKey[]
     }
 
-    if (isAdmin) {
+    if (canManageInvites) {
       const { data: codes } = await supabase
         .from("invite_codes")
         .select("id, code, max_uses, use_count, expires_at, created_at")
@@ -61,41 +65,32 @@ export default async function SettingsPage() {
         .order("created_at", { ascending: false })
       inviteCodes = codes ?? []
     }
+
+    // Fetch members (visible to all roles)
+    const { data: memberData } = await supabase.rpc("get_org_members", {
+      target_org_id: membership.org_id,
+    })
+    members = (memberData ?? []) as OrgMember[]
   }
 
+  const { data: notificationPrefs } = await getNotificationPreferences()
+
   return (
-    <div className="p-8 lg:p-12 max-w-[600px] space-y-8">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] divide-y divide-[var(--border)]">
-        {/* Profile info */}
-        <div className="px-7 py-5 flex items-center justify-between">
-          <div>
-            <p className="text-[0.84rem] text-[var(--text)] font-light">{name}</p>
-            <p className="text-[0.72rem] text-[var(--text-dim)] font-light mt-0.5">{user.email}</p>
-          </div>
-        </div>
-
-        {/* Sign out */}
-        <div className="px-7 py-5">
-          <SignOutButton />
-        </div>
-      </div>
-
-      {/* Modules */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
-        <ModuleToggle enabledModules={enabledModules} />
-      </div>
-
-      {/* Invite Codes (OWNER/ADMIN only) */}
-      {isAdmin && (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
-          <InviteCodeManager inviteCodes={inviteCodes} />
-        </div>
-      )}
-
-      {/* Tags */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-7">
-        <TagManager tags={tags} />
-      </div>
-    </div>
+    <SettingsShell
+      user={{
+        id: user.id,
+        email: user.email ?? "",
+        name,
+        avatarUrl: user.user_metadata?.avatar_url ?? null,
+      }}
+      role={userRole}
+      canManageInvites={canManageInvites}
+      canToggleModules={canToggleModules}
+      tags={tags}
+      enabledModules={enabledModules}
+      inviteCodes={inviteCodes}
+      members={members}
+      notificationPrefs={notificationPrefs}
+    />
   )
 }

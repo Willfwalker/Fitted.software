@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
+import { requirePermission } from "@/lib/rbac/require"
 import { companySchema } from "@/lib/validations/crm"
+import { notifyOrgMembers } from "./notifications"
 
 export type CompanyActionState = {
   error?: string
@@ -53,6 +55,16 @@ export async function createCompany(
     type: "COMPANY_CREATED",
     title: `Created company ${data.name}`,
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "contact",
+    title: `New company: ${data.name}`,
+    link: "/crm/companies",
+    icon: "Building2",
+    sourceType: "company",
   })
 
   revalidatePath("/crm/companies")
@@ -105,10 +117,13 @@ export async function updateCompany(
 }
 
 export async function deleteCompany(id: string): Promise<CompanyActionState> {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
-  const supabase = await createClient()
+  let permResult
+  try {
+    permResult = await requirePermission("records:delete")
+  } catch {
+    return { error: "Insufficient permissions" }
+  }
+  const { supabase, ctx } = permResult
 
   const { error } = await supabase
     .from("companies")
@@ -123,12 +138,15 @@ export async function deleteCompany(id: string): Promise<CompanyActionState> {
 }
 
 export async function bulkDeleteCompanies(ids: string[]): Promise<CompanyActionState> {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
   if (ids.length === 0) return { error: "No companies selected" }
 
-  const supabase = await createClient()
+  let permResult
+  try {
+    permResult = await requirePermission("records:delete")
+  } catch {
+    return { error: "Insufficient permissions" }
+  }
+  const { supabase, ctx } = permResult
 
   const { error } = await supabase
     .from("companies")

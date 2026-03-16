@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 vi.mock('@/lib/actions/helpers', () => ({
-  getOrgId: vi.fn().mockResolvedValue({ orgId: TEST_ORG_ID, userId: TEST_USER_ID }),
+  getOrgId: vi.fn().mockResolvedValue({ orgId: TEST_ORG_ID, userId: TEST_USER_ID, role: 'OWNER' }),
 }))
 
 const { createCompany, deleteCompany, bulkDeleteCompanies } = await import('@/lib/actions/companies')

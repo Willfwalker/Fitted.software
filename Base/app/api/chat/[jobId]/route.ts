@@ -11,6 +11,18 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // Check role — only OWNER/ADMIN can access AI features
+  const { data: memberships } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("user_id", user.id)
+    .limit(1)
+
+  const role = memberships?.[0]?.role
+  if (role === "MEMBER") {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+  }
+
   const aiServerUrl = process.env.AI_SERVER_URL
   if (!aiServerUrl) {
     return NextResponse.json({ error: "AI server not configured" }, { status: 500 })
@@ -71,5 +83,7 @@ export async function GET(
     reason: job.reason || null,
     error: job.error || null,
     pr_url: job.pr_url || null,
+    difficulty: job.difficulty || null,
+    difficulty_reason: job.difficulty_reason || null,
   })
 }

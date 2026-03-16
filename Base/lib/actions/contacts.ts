@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
+import { requirePermission } from "@/lib/rbac/require"
 import { contactSchema } from "@/lib/validations/crm"
+import { notifyOrgMembers } from "./notifications"
 
 export type ContactActionState = {
   error?: string
@@ -53,6 +55,16 @@ export async function createContact(
     type: "CONTACT_CREATED",
     title: `Created contact ${data.first_name} ${data.last_name}`,
     created_by: ctx.userId,
+  })
+
+  await notifyOrgMembers({
+    orgId: ctx.orgId,
+    performerUserId: ctx.userId,
+    category: "contact",
+    title: `New contact: ${data.first_name} ${data.last_name}`,
+    link: "/crm/contacts",
+    icon: "User",
+    sourceType: "contact",
   })
 
   revalidatePath("/crm/contacts")
@@ -105,10 +117,13 @@ export async function updateContact(
 }
 
 export async function deleteContact(id: string): Promise<ContactActionState> {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
-  const supabase = await createClient()
+  let permResult
+  try {
+    permResult = await requirePermission("records:delete")
+  } catch {
+    return { error: "Insufficient permissions" }
+  }
+  const { supabase, ctx } = permResult
 
   const { error } = await supabase
     .from("contacts")
@@ -123,12 +138,15 @@ export async function deleteContact(id: string): Promise<ContactActionState> {
 }
 
 export async function bulkDeleteContacts(ids: string[]): Promise<ContactActionState> {
-  const ctx = await getOrgId()
-  if (!ctx) return { error: "Not authenticated" }
-
   if (ids.length === 0) return { error: "No contacts selected" }
 
-  const supabase = await createClient()
+  let permResult
+  try {
+    permResult = await requirePermission("records:delete")
+  } catch {
+    return { error: "Insufficient permissions" }
+  }
+  const { supabase, ctx } = permResult
 
   const { error } = await supabase
     .from("contacts")

@@ -12,3 +12,16 @@ export const createNotificationSchema = z.object({
 })
 
 export type CreateNotificationData = z.infer<typeof createNotificationSchema>
+
+const VALID_CATEGORIES = [
+  "task", "deal", "contact", "invoice", "event", "file", "message", "form_submission",
+] as const
+
+export const updatePreferencesSchema = z.array(
+  z.object({
+    category: z.enum(VALID_CATEGORIES),
+    enabled: z.boolean(),
+  })
+).min(1, "At least one preference required")
+
+export type UpdatePreferencesData = z.infer<typeof updatePreferencesSchema>

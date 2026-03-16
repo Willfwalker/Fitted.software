@@ -1,5 +1,6 @@
 import { getServerContext } from "@/lib/supabase/context"
 import { ContactsList } from "@/components/crm/ContactsList"
+import { hasPermission } from "@/lib/rbac/permissions"
 import type { Contact } from "@/lib/types/crm"
 
 export default async function ContactsPage({
@@ -42,12 +43,15 @@ export default async function ContactsPage({
     supabase.from("companies").select("id, name").eq("org_id", orgId).order("name"),
   ])
 
+  const canDelete = hasPermission(ctx.role, "records:delete")
+
   return (
     <ContactsList
       contacts={(contacts ?? []) as Contact[]}
       companies={companies ?? []}
       searchQuery={q ?? ""}
       currentSort={sort ?? "recent"}
+      canDelete={canDelete}
     />
   )
 }
