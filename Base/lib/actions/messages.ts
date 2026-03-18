@@ -47,6 +47,9 @@ export async function sendMessage(
   const orgName = org?.name ?? "Company"
   const resendDomain = process.env.RESEND_DOMAIN || "resend.dev"
 
+  // Generate a message ID header for threading
+  const messageIdHeader = `<${crypto.randomUUID()}@${resendDomain}>`
+
   // Insert message record as SENT (optimistic)
   const { data: message, error: insertError } = await supabase
     .from("messages")
@@ -62,6 +65,8 @@ export async function sendMessage(
       company_id: d.company_id || null,
       deal_id: d.deal_id || null,
       template_id: d.template_id || null,
+      direction: "OUTBOUND",
+      message_id_header: messageIdHeader,
       sent_at: new Date().toISOString(),
       created_by: ctx.userId,
     })
@@ -128,6 +133,144 @@ export async function sendMessage(
 
   revalidatePath("/messages")
   return { success: true, messageId: message.id }
+}
+
+export async function replyToMessage(
+  parentId: string,
+  data: {
+    body: string
+    subject?: string
+  }
+): Promise<MessageActionState> {
+  const ctx = await getOrgId()
+  if (!ctx) return { error: "Not authenticated" }
+
+  const supabase = await createClient()
+
+  // Fetch parent message
+  const { data: parent } = await supabase
+    .from("messages")
+    .select("id, thread_id, recipient_email, recipient_name, contact_id, company_id, deal_id, subject, message_id_header, direction")
+    .eq("id", parentId)
+    .eq("org_id", ctx.orgId)
+    .single()
+
+  if (!parent) return { error: "Parent message not found" }
+
+  // Determine thread root
+  const threadId = parent.thread_id || parent.id
+
+  // Get org name
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name")
+    .eq("id", ctx.orgId)
+    .single()
+
+  const orgName = org?.name ?? "Company"
+  const resendDomain = process.env.RESEND_DOMAIN || "resend.dev"
+  const messageIdHeader = `<${crypto.randomUUID()}@${resendDomain}>`
+
+  // Build reply subject
+  const replySubject = data.subject || (parent.subject ? `Re: ${parent.subject.replace(/^Re:\s*/i, "")}` : `Reply from ${orgName}`)
+
+  // Insert reply
+  const { data: message, error: insertError } = await supabase
+    .from("messages")
+    .insert({
+      org_id: ctx.orgId,
+      channel: "EMAIL" as const,
+      status: "SENT" as MessageStatus,
+      subject: replySubject,
+      body: data.body,
+      recipient_email: parent.recipient_email,
+      recipient_name: parent.recipient_name,
+      contact_id: parent.contact_id,
+      company_id: parent.company_id,
+      deal_id: parent.deal_id,
+      thread_id: threadId,
+      direction: "OUTBOUND",
+      in_reply_to: parent.message_id_header,
+      message_id_header: messageIdHeader,
+      sent_at: new Date().toISOString(),
+      created_by: ctx.userId,
+    })
+    .select("id")
+    .single()
+
+  if (insertError) return { error: insertError.message }
+
+  // Send email via Resend
+  const headers: Record<string, string> = {}
+  if (parent.message_id_header) {
+    headers["In-Reply-To"] = parent.message_id_header
+    headers["References"] = parent.message_id_header
+  }
+
+  const { error: sendError } = await resend.emails.send({
+    from: `${orgName} <messages@${resendDomain}>`,
+    to: parent.recipient_email!,
+    subject: replySubject,
+    html: buildMessageEmailHtml({
+      orgName,
+      recipientName: parent.recipient_name || undefined,
+      subject: replySubject,
+      body: data.body,
+    }),
+    headers,
+  })
+
+  if (sendError) {
+    await supabase
+      .from("messages")
+      .update({ status: "FAILED" as MessageStatus, error_message: sendError.message, sent_at: null })
+      .eq("id", message.id)
+      .eq("org_id", ctx.orgId)
+    return { error: sendError.message }
+  }
+
+  // Update to DELIVERED
+  await supabase
+    .from("messages")
+    .update({ status: "DELIVERED" as MessageStatus })
+    .eq("id", message.id)
+    .eq("org_id", ctx.orgId)
+
+  // Log activity
+  await supabase.from("activities").insert({
+    org_id: ctx.orgId,
+    contact_id: parent.contact_id,
+    company_id: parent.company_id,
+    deal_id: parent.deal_id,
+    type: "MESSAGE_SENT",
+    title: `Replied to ${parent.recipient_name || parent.recipient_email}`,
+    metadata: { message_id: message.id, thread_id: threadId },
+    created_by: ctx.userId,
+  })
+
+  revalidatePath("/messages")
+  return { success: true, messageId: message.id }
+}
+
+export async function getMessageThread(
+  threadId: string
+): Promise<{ data: Message[]; error?: string }> {
+  const ctx = await getOrgId()
+  if (!ctx) return { data: [], error: "Not authenticated" }
+
+  const supabase = await createClient()
+
+  // Get the root message + all replies in the thread
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*, contact:contacts(id, first_name, last_name, email), company:companies(id, name), deal:deals(id, title)")
+    .eq("org_id", ctx.orgId)
+    .or(`id.eq.${threadId},thread_id.eq.${threadId}`)
+    .order("created_at", { ascending: true })
+
+  if (error) return { data: [], error: error.message }
+
+  return { data: (data ?? []) as Message[] }
 }
 
 export async function deleteMessage(id: string): Promise<MessageActionState> {

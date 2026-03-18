@@ -31,6 +31,9 @@ export type ActivityType =
   | "EVENT_COMPLETED"
   | "MESSAGE_SENT"
   | "FORM_SUBMITTED"
+  | "TIME_LOGGED"
+  | "PAYMENT_RECEIVED"
+  | "EMAIL_RECEIVED"
 
 export type DealPriority = "LOW" | "MEDIUM" | "HIGH"
 
@@ -137,6 +140,9 @@ export interface Invoice {
   currency: string
   notes: string | null
   share_token?: string | null
+  stripe_checkout_session_id?: string | null
+  stripe_payment_intent_id?: string | null
+  payment_url?: string | null
   created_by: string
   created_at: string
   updated_at: string
@@ -264,4 +270,7 @@ export const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { label: string; icon: s
   EVENT_COMPLETED: { label: "Event Completed", icon: "CalendarCheck" },
   MESSAGE_SENT: { label: "Message Sent", icon: "MessageSquare" },
   FORM_SUBMITTED: { label: "Form Submitted", icon: "ClipboardList" },
+  TIME_LOGGED: { label: "Time Logged", icon: "Clock" },
+  PAYMENT_RECEIVED: { label: "Payment Received", icon: "CreditCard" },
+  EMAIL_RECEIVED: { label: "Email Received", icon: "MailOpen" },
 }

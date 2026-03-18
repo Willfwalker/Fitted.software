@@ -18,6 +18,9 @@ import {
   CalendarCheck,
   MessageSquare,
   ClipboardList,
+  Clock,
+  CreditCard,
+  MailOpen,
 } from "lucide-react"
 import type { Activity, ActivityType } from "@/lib/types/crm"
 
@@ -42,6 +45,9 @@ const iconMap: Record<ActivityType, React.ElementType> = {
   EVENT_COMPLETED: CalendarCheck,
   MESSAGE_SENT: MessageSquare,
   FORM_SUBMITTED: ClipboardList,
+  TIME_LOGGED: Clock,
+  PAYMENT_RECEIVED: CreditCard,
+  EMAIL_RECEIVED: MailOpen,
 }
 
 const colorMap: Record<ActivityType, string> = {
@@ -65,6 +71,9 @@ const colorMap: Record<ActivityType, string> = {
   EVENT_COMPLETED: "#5EC69A",
   MESSAGE_SENT: "#5B8DEF",
   FORM_SUBMITTED: "#5EC69A",
+  TIME_LOGGED: "#E8A84C",
+  PAYMENT_RECEIVED: "#5EC69A",
+  EMAIL_RECEIVED: "#5B8DEF",
 }
 
 interface ActivityTimelineProps {

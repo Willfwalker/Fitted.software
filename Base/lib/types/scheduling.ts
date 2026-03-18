@@ -19,6 +19,9 @@ export interface CalendarEvent {
   company_id: string | null
   deal_id: string | null
   assigned_to: string | null
+  google_event_id: string | null
+  google_calendar_id: string | null
+  last_synced_at: string | null
   metadata: Record<string, unknown> | null
   created_by: string
   created_at: string

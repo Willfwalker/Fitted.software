@@ -5,7 +5,7 @@ import { getOrgId } from "./helpers"
 
 export interface SearchResult {
   id: string
-  type: "contact" | "company" | "deal" | "task" | "file" | "event" | "message" | "template" | "form"
+  type: "contact" | "company" | "deal" | "task" | "file" | "event" | "message" | "template" | "form" | "time_entry"
   title: string
   subtitle: string | null
 }
@@ -19,7 +19,7 @@ export async function globalSearch(query: string): Promise<{ results: SearchResu
   const supabase = await createClient()
   const q = `%${query.trim()}%`
 
-  const [contactsRes, companiesRes, dealsRes, tasksRes, filesRes, eventsRes, messagesRes, templatesRes, formsRes] = await Promise.all([
+  const [contactsRes, companiesRes, dealsRes, tasksRes, filesRes, eventsRes, messagesRes, templatesRes, formsRes, timeEntriesRes] = await Promise.all([
     supabase
       .from("contacts")
       .select("id, first_name, last_name, email")
@@ -73,6 +73,12 @@ export async function globalSearch(query: string): Promise<{ results: SearchResu
       .select("id, name, status")
       .eq("org_id", ctx.orgId)
       .ilike("name", q)
+      .limit(5),
+    supabase
+      .from("time_entries")
+      .select("id, description, duration_minutes, date")
+      .eq("org_id", ctx.orgId)
+      .ilike("description", q)
       .limit(5),
   ])
 
@@ -130,6 +136,12 @@ export async function globalSearch(query: string): Promise<{ results: SearchResu
       type: "form" as const,
       title: f.name,
       subtitle: f.status,
+    })),
+    ...(timeEntriesRes.data ?? []).map((t) => ({
+      id: t.id,
+      type: "time_entry" as const,
+      title: t.description || "Time entry",
+      subtitle: `${(t.duration_minutes / 60).toFixed(1)}h on ${t.date}`,
     })),
   ]
 

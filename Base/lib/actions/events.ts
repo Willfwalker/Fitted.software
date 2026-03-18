@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { calendarEventSchema } from "@/lib/validations/scheduling"
 import { notifyOrgMembers } from "./notifications"
+import { pushEventToGoogle, deleteEventFromGoogle } from "./google-calendar"
 
 export type EventActionState = {
   error?: string
@@ -76,6 +77,9 @@ export async function createEvent(
     sourceId: event.id,
   })
 
+  // Push to Google Calendar if connected
+  await pushEventToGoogle(event.id).catch(() => {})
+
   revalidatePath("/calendar")
   return { success: true }
 }
@@ -115,6 +119,9 @@ export async function updateEvent(
     .eq("org_id", ctx.orgId)
 
   if (error) return { error: error.message }
+
+  // Push update to Google Calendar
+  await pushEventToGoogle(id).catch(() => {})
 
   revalidatePath("/calendar")
   return { success: true }
@@ -202,6 +209,14 @@ export async function deleteEvent(id: string): Promise<EventActionState> {
 
   const supabase = await createClient()
 
+  // Check for Google event ID before deleting
+  const { data: event } = await supabase
+    .from("calendar_events")
+    .select("google_event_id")
+    .eq("id", id)
+    .eq("org_id", ctx.orgId)
+    .single()
+
   const { error } = await supabase
     .from("calendar_events")
     .delete()
@@ -209,6 +224,11 @@ export async function deleteEvent(id: string): Promise<EventActionState> {
     .eq("org_id", ctx.orgId)
 
   if (error) return { error: error.message }
+
+  // Delete from Google Calendar if synced
+  if (event?.google_event_id) {
+    await deleteEventFromGoogle(event.google_event_id).catch(() => {})
+  }
 
   revalidatePath("/calendar")
   return { success: true }

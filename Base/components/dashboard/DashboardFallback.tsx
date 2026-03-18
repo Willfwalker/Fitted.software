@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import Link from "next/link"
 import { StatCard } from "@/components/dashboard/StatCard"
 import { RevenueChart } from "@/components/dashboard/RevenueChart"
@@ -131,19 +132,55 @@ export async function DashboardFallback({
     .eq("org_id", orgId)
 
   if (orgMembers) {
-    dbMembers = orgMembers.map((m) => ({
-      id: m.id,
-      role: m.role,
-      user: {
-        name:
-          m.user_id === userId
-            ? user?.user_metadata?.full_name ?? null
-            : null,
-        email:
-          m.user_id === userId ? (user?.email ?? "unknown") : m.user_id,
-        image: null,
-      },
-    }))
+    // Look up all member user details via admin client
+    const otherUserIds = orgMembers
+      .filter((m) => m.user_id !== userId)
+      .map((m) => m.user_id)
+
+    const userDetailsMap = new Map<
+      string,
+      { name: string | null; email: string }
+    >()
+
+    if (otherUserIds.length > 0) {
+      const admin = createAdminClient()
+      for (const uid of otherUserIds) {
+        const { data } = await admin.auth.admin.getUserById(uid)
+        if (data?.user) {
+          userDetailsMap.set(uid, {
+            name:
+              data.user.user_metadata?.full_name ??
+              data.user.user_metadata?.name ??
+              null,
+            email: data.user.email ?? "unknown",
+          })
+        }
+      }
+    }
+
+    dbMembers = orgMembers.map((m) => {
+      if (m.user_id === userId) {
+        return {
+          id: m.id,
+          role: m.role,
+          user: {
+            name: user?.user_metadata?.full_name ?? null,
+            email: user?.email ?? "unknown",
+            image: null,
+          },
+        }
+      }
+      const details = userDetailsMap.get(m.user_id)
+      return {
+        id: m.id,
+        role: m.role,
+        user: {
+          name: details?.name ?? null,
+          email: details?.email ?? m.user_id,
+          image: null,
+        },
+      }
+    })
   }
 
   const members = dbMembers

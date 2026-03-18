@@ -1,0 +1,26 @@
+name: Propagate Base Updates to Client Repos
+
+on:
+  push:
+    branches: [main]
+    paths: ['Base/**']
+
+jobs:
+  propagate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install octokit @supabase/supabase-js
+
+      - name: Propagate updates to client repos
+        run: node .github/scripts/propagate-updates.mjs
+        env:
+          PROPAGATION_TOKEN: ${{ secrets.PROPAGATION_TOKEN }}
+          FITTED_SOFTWARE_SUPABASE_URL: ${{ secrets.FITTED_SOFTWARE_SUPABASE_URL }}
+          FITTED_SOFTWARE_SUPABASE_SERVICE_KEY: ${{ secrets.FITTED_SOFTWARE_SUPABASE_SERVICE_KEY }}

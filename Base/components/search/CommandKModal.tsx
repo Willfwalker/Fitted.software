@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Users, Building2, Briefcase, FolderKanban, Paperclip, CalendarDays, MessageSquare, FileText, ClipboardList } from "lucide-react"
+import { Users, Building2, Briefcase, FolderKanban, Paperclip, CalendarDays, MessageSquare, FileText, ClipboardList, Clock } from "lucide-react"
 import {
   CommandDialog,
   CommandEmpty,
@@ -23,6 +23,7 @@ const TYPE_CONFIG = {
   message: { icon: MessageSquare, label: "Messages", path: "/messages" },
   template: { icon: FileText, label: "Templates", path: "/messages/templates" },
   form: { icon: ClipboardList, label: "Forms", path: "/forms" },
+  time_entry: { icon: Clock, label: "Time Entries", path: "/tasks" },
 }
 
 export function CommandKModal() {

@@ -7,6 +7,8 @@ import {
   Paperclip,
   MessageSquare,
   ClipboardList,
+  Zap,
+  Timer,
 } from "lucide-react"
 
 export type ModuleKey =
@@ -18,6 +20,8 @@ export type ModuleKey =
   | "files"
   | "forms"
   | "reports"
+  | "automations"
+  | "time-tracking"
 
 export interface ModuleDef {
   key: ModuleKey
@@ -37,6 +41,8 @@ export const ALL_MODULES: ModuleDef[] = [
   { key: "files", label: "Files", href: "/files", icon: Paperclip, description: "File storage and sharing" },
   { key: "forms", label: "Forms", href: "/forms", icon: ClipboardList, description: "Build and manage forms" },
   { key: "reports", label: "Reports", href: "/reports", icon: BarChart3, description: "Analytics and reporting" },
+  { key: "automations", label: "Automations", href: "/automations", icon: Zap, description: "Workflow automation rules" },
+  { key: "time-tracking", label: "Time Tracking", href: "/time-tracking", icon: Timer, description: "Track hours and generate invoices" },
 ]
 
 export const ALL_MODULE_KEYS: ModuleKey[] = ALL_MODULES.map((m) => m.key)

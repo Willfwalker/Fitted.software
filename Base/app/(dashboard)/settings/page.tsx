@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { SettingsShell } from "@/components/settings/SettingsShell"
 import { getNotificationPreferences } from "@/lib/actions/notifications"
+import { getProfile } from "@/lib/actions/profile"
 import { DEFAULT_ENABLED_MODULES, type ModuleKey } from "@/lib/config/modules"
 import { hasPermission, type AppRole } from "@/lib/rbac/permissions"
 import type { Tag } from "@/lib/types/crm"
@@ -74,6 +75,7 @@ export default async function SettingsPage() {
   }
 
   const { data: notificationPrefs } = await getNotificationPreferences()
+  const { data: profile } = await getProfile()
 
   return (
     <SettingsShell
@@ -91,6 +93,7 @@ export default async function SettingsPage() {
       inviteCodes={inviteCodes}
       members={members}
       notificationPrefs={notificationPrefs}
+      profile={profile}
     />
   )
 }

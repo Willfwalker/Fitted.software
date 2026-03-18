@@ -10,6 +10,7 @@ import { InvoicePDFDocument } from "@/lib/pdf/invoice-template"
 import { buildInvoiceEmailHtml } from "@/lib/email/invoice-email"
 import { Resend } from "resend"
 import type { InvoiceStatus } from "@/lib/types/crm"
+import { runAutomations } from "@/lib/automations/engine"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -282,6 +283,17 @@ export async function updateInvoiceStatus(
     icon: "FileText",
     sourceType: "invoice",
     sourceId: id,
+  })
+
+  // Trigger automations
+  await runAutomations(ctx.orgId, ctx.userId, "INVOICE_STATUS_CHANGED", {
+    invoice_id: id,
+    invoice_number: invoice.invoice_number,
+    from: invoice.status,
+    to: newStatus,
+    contact_id: invoice.contact_id,
+    company_id: invoice.company_id,
+    deal_id: invoice.deal_id,
   })
 
   revalidatePath("/invoicing")

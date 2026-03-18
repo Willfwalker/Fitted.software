@@ -10,11 +10,13 @@ import { MemberManager } from "@/components/settings/MemberManager"
 import { InviteCodeManager } from "@/components/settings/InviteCodeManager"
 import { ModuleToggle } from "@/components/settings/ModuleToggle"
 import { TagManager } from "@/components/tags/TagManager"
+import { ProfileEditor } from "@/components/settings/ProfileEditor"
 import type { AppRole } from "@/lib/rbac/permissions"
 import type { ModuleKey } from "@/lib/config/modules"
 import type { Tag } from "@/lib/types/crm"
 import type { OrgMember } from "@/lib/types/members"
 import type { NotificationPreference } from "@/lib/types/notifications"
+import type { Profile } from "@/lib/types/profile"
 
 interface SettingsShellProps {
   user: {
@@ -34,6 +36,7 @@ interface SettingsShellProps {
   }>
   members: OrgMember[]
   notificationPrefs: NotificationPreference[]
+  profile: Profile | null
 }
 
 const ROLE_BADGE: Record<AppRole, { label: string; bg: string; text: string }> = {
@@ -66,6 +69,7 @@ export function SettingsShell({
   inviteCodes,
   members,
   notificationPrefs,
+  profile,
 }: SettingsShellProps) {
   const [activeTab, setActiveTab] = useState("account")
   const badge = ROLE_BADGE[role]
@@ -161,25 +165,12 @@ export function SettingsShell({
           {/* Account */}
           <TabsContent value="account" className="animate-settings-tab-enter">
             <div className="space-y-6">
-              {/* Profile Info (read-only) */}
+              {/* Profile Editor */}
               <div className="rounded-xl border border-[var(--border-light)] bg-[var(--bg-elevated)] p-6">
-                <h3 className="text-[0.82rem] font-medium uppercase tracking-[0.14em] text-[var(--text-dim)] mb-4">
+                <h3 className="text-[0.82rem] font-medium uppercase tracking-[0.14em] text-[var(--text-dim)] mb-5">
                   Profile
                 </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-[0.72rem] text-[var(--text-dim)] font-light mb-0.5">Name</p>
-                    <p className="text-[0.88rem] text-[var(--text)] font-light">{user.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.72rem] text-[var(--text-dim)] font-light mb-0.5">Email</p>
-                    <p className="text-[0.88rem] text-[var(--text)] font-light">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.72rem] text-[var(--text-dim)] font-light mb-0.5">Role</p>
-                    <p className="text-[0.88rem] text-[var(--text)] font-light">{badge.label}</p>
-                  </div>
-                </div>
+                <ProfileEditor user={user} profile={profile} />
               </div>
 
               {/* Danger Zone */}

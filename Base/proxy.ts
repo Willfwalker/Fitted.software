@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
   const PROTECTED_PREFIXES = [
     "/dashboard", "/crm", "/tasks", "/calendar",
     "/invoicing", "/messages", "/files", "/forms",
-    "/reports", "/settings",
+    "/reports", "/settings", "/automations", "/time-tracking",
   ]
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))
 

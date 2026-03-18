@@ -6,6 +6,7 @@ import type { Contact, Company, Deal } from "./crm"
 
 export type MessageChannel = "EMAIL" | "SMS"
 export type MessageStatus = "DRAFT" | "SENT" | "DELIVERED" | "FAILED"
+export type MessageDirection = "INBOUND" | "OUTBOUND"
 
 export interface MessageTemplate {
   id: string
@@ -35,6 +36,11 @@ export interface Message {
   template_id: string | null
   sent_at: string | null
   error_message: string | null
+  thread_id: string | null
+  direction: MessageDirection
+  resend_email_id: string | null
+  in_reply_to: string | null
+  message_id_header: string | null
   metadata: Record<string, unknown> | null
   created_by: string
   created_at: string

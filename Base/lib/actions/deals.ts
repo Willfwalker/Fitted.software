@@ -7,6 +7,7 @@ import { requirePermission } from "@/lib/rbac/require"
 import { dealSchema } from "@/lib/validations/crm"
 import { notifyOrgMembers } from "./notifications"
 import type { DealStage } from "@/lib/types/crm"
+import { runAutomations } from "@/lib/automations/engine"
 
 export type DealActionState = {
   error?: string
@@ -193,6 +194,14 @@ export async function moveDealStage(
       icon: "Handshake",
       sourceType: "deal",
       sourceId: dealId,
+    })
+
+    // Trigger automations
+    await runAutomations(ctx.orgId, ctx.userId, "DEAL_STAGE_CHANGED", {
+      deal_id: dealId,
+      deal_title: deal.title,
+      from: oldStage,
+      to: newStage,
     })
   }
 

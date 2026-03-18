@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getOrgId } from "./helpers"
 import { taskSchema } from "@/lib/validations/tasks"
 import { notifyOrgMembers, createNotification } from "./notifications"
+import { runAutomations } from "@/lib/automations/engine"
 
 export type TaskActionState = {
   error?: string
@@ -182,6 +183,16 @@ export async function moveTask(
       icon: "CheckSquare",
       sourceType: "task",
       sourceId: taskId,
+    })
+
+    // Trigger automations
+    await runAutomations(ctx.orgId, ctx.userId, "TASK_STATUS_CHANGED", {
+      task_id: taskId,
+      task_title: task.title,
+      from_column: oldColumnId,
+      to_column: newColumnId,
+      from_column_name: oldCol?.name,
+      to_column_name: newCol?.name,
     })
   }
 
