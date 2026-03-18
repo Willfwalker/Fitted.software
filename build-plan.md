@@ -6,6 +6,7 @@ Fitted Agency is an AI-powered agency-in-a-box where each customer gets a copy o
 
 The existing patterns are well-established and must be followed exactly — the AI agent's reliability depends on boring, repetitive code structure across all modules.
 
+#tigger
 ---
 
 ## Build Order
