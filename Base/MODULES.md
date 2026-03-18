@@ -10,6 +10,7 @@
 - Kanban template: components/crm/DealsPipeline.tsx
 - Public share template: app/(public)/invoice/[token]/page.tsx
 
+
 ## Modules
 
 ### Auth
