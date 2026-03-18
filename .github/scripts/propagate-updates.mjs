@@ -95,11 +95,7 @@ async function propagateToClient(client, baseBlobs) {
 
   console.log(`\nProcessing: ${client.business_name} (${repo})`);
 
-  // Check idempotency — skip if branch already exists
-  if (await branchExists(repo)) {
-    console.log(`  Branch ${BRANCH_NAME} already exists — skipping`);
-    return;
-  }
+  const branchAlreadyExists = await branchExists(repo);
 
   // Get client repo's main branch SHA
   const { data: clientRef } = await octokit.rest.git.getRef({
@@ -151,37 +147,48 @@ async function propagateToClient(client, baseBlobs) {
     parents: [clientMainSha],
   });
 
-  // Create branch
-  await octokit.rest.git.createRef({
-    owner: OWNER,
-    repo,
-    ref: `refs/heads/${BRANCH_NAME}`,
-    sha: newCommit.sha,
-  });
+  if (branchAlreadyExists) {
+    // Force-update existing branch to the new commit
+    await octokit.rest.git.updateRef({
+      owner: OWNER,
+      repo,
+      ref: `heads/${BRANCH_NAME}`,
+      sha: newCommit.sha,
+      force: true,
+    });
+    console.log(`  Updated existing branch ${BRANCH_NAME}`);
+  } else {
+    // Create branch + open PR
+    await octokit.rest.git.createRef({
+      owner: OWNER,
+      repo,
+      ref: `refs/heads/${BRANCH_NAME}`,
+      sha: newCommit.sha,
+    });
 
-  // Open PR
-  const { data: pr } = await octokit.rest.pulls.create({
-    owner: OWNER,
-    repo,
-    title: `Template Update — ${today}`,
-    head: BRANCH_NAME,
-    base: "main",
-    body: [
-      "## Template Update from Fitted Base",
-      "",
-      "This PR contains the latest updates from the Fitted Base template.",
-      "",
-      "### Review Instructions",
-      "- Review the changes to ensure they don't conflict with your customizations",
-      "- If there are merge conflicts, resolve them keeping your custom changes where appropriate",
-      "- Template files you haven't modified will update cleanly",
-      "",
-      "---",
-      "*Automated by Fitted Software propagation pipeline*",
-    ].join("\n"),
-  });
+    const { data: pr } = await octokit.rest.pulls.create({
+      owner: OWNER,
+      repo,
+      title: `Template Update — ${today}`,
+      head: BRANCH_NAME,
+      base: "main",
+      body: [
+        "## Template Update from Fitted Base",
+        "",
+        "This PR contains the latest updates from the Fitted Base template.",
+        "",
+        "### Review Instructions",
+        "- Review the changes to ensure they don't conflict with your customizations",
+        "- If there are merge conflicts, resolve them keeping your custom changes where appropriate",
+        "- Template files you haven't modified will update cleanly",
+        "",
+        "---",
+        "*Automated by Fitted Software propagation pipeline*",
+      ].join("\n"),
+    });
 
-  console.log(`  PR created: ${pr.html_url}`);
+    console.log(`  PR created: ${pr.html_url}`);
+  }
 }
 
 async function main() {
