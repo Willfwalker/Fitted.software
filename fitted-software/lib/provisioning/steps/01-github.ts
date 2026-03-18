@@ -80,7 +80,7 @@ export async function stepGithub(ctx: ProvisionContext): Promise<Partial<Provisi
   const { data: newTree } = await octokit.rest.git.createTree({
     owner,
     repo: repoName,
-    tree: newTreeItems as Parameters<typeof octokit.rest.git.createTree>[0]["tree"],
+    tree: newTreeItems as any,
   })
 
   // 7. Get the current main ref of the new repo (the auto_init commit)
