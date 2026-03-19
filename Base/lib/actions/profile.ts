@@ -30,7 +30,7 @@ export async function updateProfile(
 
   const parsed = profileSchema.safeParse(input)
   if (!parsed.success) {
-    return { data: null, error: parsed.error.errors[0]?.message ?? "Invalid input" }
+    return { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" }
   }
 
   const supabase = await createClient()

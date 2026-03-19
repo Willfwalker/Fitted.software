@@ -105,10 +105,40 @@ async function propagateToClient(client, baseBlobs) {
   });
   const clientMainSha = clientRef.object.sha;
 
-  // Copy each blob from source to client repo
+  // Get client repo's current tree to diff against
+  const { data: clientCommit } = await octokit.rest.git.getCommit({
+    owner: OWNER,
+    repo,
+    commit_sha: clientMainSha,
+  });
+  const { data: clientTree } = await octokit.rest.git.getTree({
+    owner: OWNER,
+    repo,
+    tree_sha: clientCommit.tree.sha,
+    recursive: "true",
+  });
+
+  // Build a map of path → sha for the client's current files
+  const clientShaMap = new Map();
+  for (const item of clientTree.tree) {
+    if (item.type === "blob") clientShaMap.set(item.path, item.sha);
+  }
+
+  // Only copy blobs that differ from what the client already has
+  const changedBlobs = baseBlobs.filter(
+    (item) => clientShaMap.get(item.path) !== item.sha
+  );
+
+  console.log(`  ${changedBlobs.length} changed file(s) out of ${baseBlobs.length}`);
+
+  if (changedBlobs.length === 0) {
+    console.log("  No changes to propagate — skipping");
+    return;
+  }
+
   const newTreeItems = [];
 
-  for (const item of baseBlobs) {
+  for (const item of changedBlobs) {
     const { data: blob } = await octokit.rest.git.getBlob({
       owner: OWNER,
       repo: SOURCE_REPO,
