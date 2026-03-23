@@ -300,7 +300,7 @@
   /* --- Transform Section (Scroll Animation) --- */
 
   .transform-section {
-    height: 900vh;
+    height: 1200vh;
     position: relative;
   }
 
@@ -311,7 +311,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
   }
 
   .transform-headline {

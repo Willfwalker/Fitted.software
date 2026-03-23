@@ -467,7 +467,7 @@ function TransformSection() {
   // Phase 1 (0.00\u20130.18): Tools scatter in + "Your current stack"
   const h1Opacity = useTransform(
     scrollYProgress,
-    [0, 0.03, 0.14, 0.18],
+    [0, 0.02, 0.09, 0.12],
     [0, 1, 1, 0]
   );
   // Phase 2 (0.18\u20130.36): Tools converge (no headline)
@@ -475,24 +475,24 @@ function TransformSection() {
   // Phase 4 (0.46\u20130.60): "What if it was just\u2026" alone on screen
   const h2Opacity = useTransform(
     scrollYProgress,
-    [0.46, 0.50, 0.56, 0.60],
+    [0.32, 0.35, 0.39, 0.42],
     [0, 1, 1, 0]
   );
   // Phase 5 (0.66\u20130.78): Platform card appears
   const platformOpacity = useTransform(
     scrollYProgress,
-    [0.66, 0.74],
+    [0.46, 0.52],
     [0, 1]
   );
   const platformScale = useTransform(
     scrollYProgress,
-    [0.66, 0.78],
+    [0.46, 0.54],
     [0.88, 1]
   );
   // Phase 6 (0.78\u20131.0): "One platform. Yours." above the card
   const h3Opacity = useTransform(
     scrollYProgress,
-    [0.78, 0.84],
+    [0.54, 0.60],
     [0, 1]
   );
 
@@ -513,7 +513,7 @@ function TransformSection() {
         </motion.h2>
         <motion.h2
           className="transform-headline"
-          style={{ opacity: h3Opacity, y: -250 }}
+          style={{ opacity: h3Opacity, y: -200 }}
         >
           One platform. <em>Yours.</em>
         </motion.h2>
@@ -532,6 +532,7 @@ function TransformSection() {
           style={{
             opacity: platformOpacity,
             scale: platformScale,
+            y: 40,
           }}
         >
           <div className="platform-header">
@@ -562,28 +563,28 @@ function ToolCard({
   // Scattered during phase 1, converge during phase 2
   const x = useTransform(
     scrollProgress,
-    [0, 0.04, 0.18, 0.36],
+    [0, 0.03, 0.12, 0.24],
     [`${tool.x}vw`, `${tool.x}vw`, `${tool.x * 0.12}vw`, "0vw"]
   );
   const y = useTransform(
     scrollProgress,
-    [0, 0.04, 0.18, 0.36],
+    [0, 0.03, 0.12, 0.24],
     [`${tool.y}vh`, `${tool.y}vh`, `${tool.y * 0.12}vh`, "0vh"]
   );
   const rotate = useTransform(
     scrollProgress,
-    [0, 0.18, 0.36],
+    [0, 0.12, 0.24],
     [tool.rotate, tool.rotate * 0.3, 0]
   );
-  // Appear staggered in phase 1, fully gone by 0.44 (before h2 at 0.46)
+  // Appear staggered in phase 1, fully gone by 0.30 (before h2 at 0.32)
   const opacity = useTransform(
     scrollProgress,
-    [0, 0.02 + index * 0.008, 0.36, 0.44],
+    [0, 0.015 + index * 0.006, 0.24, 0.30],
     [0, 1, 1, 0]
   );
   const scale = useTransform(
     scrollProgress,
-    [0.36, 0.44],
+    [0.24, 0.30],
     [1, 0.5]
   );
 
