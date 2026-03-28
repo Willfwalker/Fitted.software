@@ -16,13 +16,23 @@ export async function runSQL(
     body: JSON.stringify({ query: sql }),
   })
 
+  const body = await res.text()
+
   if (!res.ok) {
-    const body = await res.text()
     // Skip "already exists" errors — these schemas are incremental
     if (body.includes("already exists")) {
       console.log(`     ⚠ Skipped (already exists)`)
       return
     }
     throw new Error(`SQL execution failed: ${body}`)
+  }
+
+  // Supabase can return 200 but include errors in the body
+  if (body.includes('"error"') || body.includes("ERROR:")) {
+    if (body.includes("already exists")) {
+      console.log(`     ⚠ Skipped (already exists)`)
+      return
+    }
+    throw new Error(`SQL execution returned errors: ${body.slice(0, 500)}`)
   }
 }

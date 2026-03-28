@@ -52,8 +52,14 @@ export async function stepSupabase(ctx: ProvisionContext): Promise<Partial<Provi
 
   console.log("     Fetching schema_full.sql...")
   const sql = await fetchFileFromRepo(octokit, ghOrg, templateRepo, "Base/supabase/schema_full.sql")
-  console.log("     Running schema_full.sql...")
-  await runSQL(ref, accessToken, sql)
+  console.log(`     Running schema_full.sql (${sql.length} chars)...`)
+
+  // Wrap in transaction so it fully succeeds or fully rolls back
+  await runSQL(ref, accessToken, `BEGIN;\n${sql}\nCOMMIT;`)
+
+  // Verify the schema was applied
+  console.log("     Verifying schema...")
+  await runSQL(ref, accessToken, `SELECT 1 FROM public.organizations LIMIT 0;`)
 
   // Set enabled_modules default to selected modules
   const modulesJson = JSON.stringify(ctx.modules)
