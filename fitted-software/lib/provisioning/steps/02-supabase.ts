@@ -45,21 +45,55 @@ export async function stepSupabase(ctx: ProvisionContext): Promise<Partial<Provi
 
   const supabaseUrl = `https://${ref}.supabase.co`
 
-  // 4. Fetch and run the consolidated schema
+  // 4. Fetch and run schemas individually (Management API has query size limits)
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
   const ghOrg = process.env.GITHUB_ORG!
   const templateRepo = process.env.GITHUB_TEMPLATE_REPO || "Fitted.software"
 
-  console.log("     Fetching schema_full.sql...")
-  const sql = await fetchFileFromRepo(octokit, ghOrg, templateRepo, "Base/supabase/schema_full.sql")
-  console.log(`     Running schema_full.sql (${sql.length} chars)...`)
+  // List schema and migration files in order
+  const schemaFiles = [
+    // Core schema
+    "Base/supabase/schemas/001_base.sql",
+    // RLS fixes (defines get_user_org_ids() used by later schemas)
+    "Base/supabase/fixes/001_rls_recursion.sql",
+    "Base/supabase/fixes/002_rls_recursion_v2.sql",
+    // Feature schemas
+    "Base/supabase/schemas/002_crm.sql",
+    "Base/supabase/schemas/003_invoicing_tags.sql",
+    "Base/supabase/schemas/004_pdf_email_recurring.sql",
+    "Base/supabase/schemas/005_tasks.sql",
+    "Base/supabase/schemas/006_notifications.sql",
+    "Base/supabase/schemas/007_files.sql",
+    "Base/supabase/schemas/008_scheduling.sql",
+    "Base/supabase/schemas/009_messaging.sql",
+    "Base/supabase/schemas/010_forms.sql",
+    "Base/supabase/schemas/011_chat.sql",
+    "Base/supabase/schemas/012_notification_preferences.sql",
+    "Base/supabase/schemas/013_integrations.sql",
+    "Base/supabase/schemas/014_time_tracking.sql",
+    "Base/supabase/schemas/015_stripe.sql",
+    "Base/supabase/schemas/016_client_portal.sql",
+    "Base/supabase/schemas/017_email_threads.sql",
+    "Base/supabase/schemas/018_automations.sql",
+    "Base/supabase/schemas/019_google_calendar.sql",
+    "Base/supabase/schemas/020_profiles.sql",
+    // Migrations
+    "Base/supabase/migrations/001_invoice_enhancements.sql",
+    "Base/supabase/migrations/002_enabled_modules.sql",
+    "Base/supabase/migrations/003_single_tenant.sql",
+    "Base/supabase/migrations/004_get_org_members.sql",
+  ]
 
-  // Wrap in transaction so it fully succeeds or fully rolls back
-  await runSQL(ref, accessToken, `BEGIN;\n${sql}\nCOMMIT;`)
+  for (const file of schemaFiles) {
+    const name = file.split("/").pop()!
+    console.log(`     Running ${name}...`)
+    const sql = await fetchFileFromRepo(octokit, ghOrg, templateRepo, file)
+    await runSQL(ref, accessToken, sql)
+  }
 
   // Verify the schema was applied
-  console.log("     Verifying schema...")
   await runSQL(ref, accessToken, `SELECT 1 FROM public.organizations LIMIT 0;`)
+  console.log("     ✓ Schema verified")
 
   // Set enabled_modules default to selected modules
   const modulesJson = JSON.stringify(ctx.modules)
