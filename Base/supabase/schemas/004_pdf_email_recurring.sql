@@ -14,12 +14,10 @@ ALTER TABLE public.invoices
 CREATE INDEX IF NOT EXISTS idx_invoices_share_token
   ON public.invoices(share_token) WHERE share_token IS NOT NULL;
 
--- Allow public (anon) read access by share_token
-CREATE POLICY "Anyone can view invoices by share_token"
-  ON public.invoices FOR SELECT
-  USING (share_token IS NOT NULL AND share_token = share_token);
--- Note: the actual filtering happens in the query (WHERE share_token = $1).
--- This policy just allows anon reads when a share_token exists.
+-- Share-token-based invoice access is handled by admin-client server routes
+-- (e.g. /invoices/[id]/public, PDF generation) which bypass RLS.
+-- No anon RLS policy is needed here — removing the tautological policy
+-- that previously exposed all shared invoices to any anon caller.
 
 -- 2. Recurring invoices table
 CREATE TABLE IF NOT EXISTS public.recurring_invoices (

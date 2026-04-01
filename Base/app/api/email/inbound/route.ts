@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import crypto from "crypto"
 
 function getAdminClient() {
   return createClient(
@@ -8,12 +9,26 @@ function getAdminClient() {
   )
 }
 
+function verifyInboundSignature(body: string, signature: string | null): boolean {
+  const secret = process.env.RESEND_WEBHOOK_SECRET
+  if (!secret || !signature) return false
+  const expected = crypto.createHmac("sha256", secret).update(body).digest("hex")
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+}
+
 /**
  * Inbound email webhook handler (Resend Inbound).
  * Receives parsed email data and creates an INBOUND message record.
  */
 export async function POST(request: NextRequest) {
-  const data = await request.json()
+  const rawBody = await request.text()
+  const signature = request.headers.get("resend-signature")
+
+  if (!verifyInboundSignature(rawBody, signature)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+  }
+
+  const data = JSON.parse(rawBody)
 
   const {
     from,

@@ -113,16 +113,44 @@ create policy "entity_files_delete" on public.entity_files
 
 create policy "org_files_insert" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'org-files');
+  with check (
+    bucket_id = 'org-files'
+    and (storage.foldername(name))[1] in (
+      select o.id::text from public.organizations o
+      join public.organization_members om on om.org_id = o.id
+      where om.user_id = auth.uid()
+    )
+  );
 
 create policy "org_files_select" on storage.objects
   for select to authenticated
-  using (bucket_id = 'org-files');
+  using (
+    bucket_id = 'org-files'
+    and (storage.foldername(name))[1] in (
+      select o.id::text from public.organizations o
+      join public.organization_members om on om.org_id = o.id
+      where om.user_id = auth.uid()
+    )
+  );
 
 create policy "org_files_delete" on storage.objects
   for delete to authenticated
-  using (bucket_id = 'org-files');
+  using (
+    bucket_id = 'org-files'
+    and (storage.foldername(name))[1] in (
+      select o.id::text from public.organizations o
+      join public.organization_members om on om.org_id = o.id
+      where om.user_id = auth.uid()
+    )
+  );
 
 create policy "org_files_update" on storage.objects
   for update to authenticated
-  using (bucket_id = 'org-files');
+  using (
+    bucket_id = 'org-files'
+    and (storage.foldername(name))[1] in (
+      select o.id::text from public.organizations o
+      join public.organization_members om on om.org_id = o.id
+      where om.user_id = auth.uid()
+    )
+  );

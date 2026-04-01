@@ -96,7 +96,14 @@ export async function stepSupabase(ctx: ProvisionContext): Promise<Partial<Provi
   console.log("     ✓ Schema verified")
 
   // Set enabled_modules default to selected modules
-  const modulesJson = JSON.stringify(ctx.modules)
+  const VALID_MODULES = [
+    "crm", "tasks", "calendar", "invoicing", "messaging",
+    "files", "forms", "reports", "automations", "time-tracking",
+  ]
+  const safeModules = (ctx.modules || []).filter(
+    (m: string) => VALID_MODULES.includes(m) && /^[a-z-]+$/.test(m)
+  )
+  const modulesJson = JSON.stringify(safeModules)
   await runSQL(ref, accessToken, `
     ALTER TABLE public.organizations
       ALTER COLUMN enabled_modules SET DEFAULT '${modulesJson}'::jsonb;

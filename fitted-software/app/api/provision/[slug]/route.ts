@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -5,11 +6,17 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const { slug } = await params
-  const supabase = createServiceClient()
+  const adminDb = createServiceClient()
 
   // Only allow deleting failed or rolled_back clients
-  const { data: client } = await supabase
+  const { data: client } = await adminDb
     .from("provisioned_clients")
     .select("id, status")
     .eq("slug", slug)
@@ -26,7 +33,7 @@ export async function DELETE(
     )
   }
 
-  const { error } = await supabase
+  const { error } = await adminDb
     .from("provisioned_clients")
     .delete()
     .eq("id", client.id)

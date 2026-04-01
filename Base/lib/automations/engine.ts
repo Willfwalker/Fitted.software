@@ -4,6 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 import { renderTemplate } from "@/lib/types/messaging"
 import type { TriggerType, ActionType, Automation } from "@/lib/types/automations"
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
 /**
  * Core automation runner.
  * Called from various action handlers when events occur.
@@ -118,7 +126,7 @@ async function executeAction(
   const templateValues: Record<string, string> = {}
   for (const [key, value] of Object.entries(triggerData)) {
     if (typeof value === "string" || typeof value === "number") {
-      templateValues[key] = String(value)
+      templateValues[key] = escapeHtml(String(value))
     }
   }
 
