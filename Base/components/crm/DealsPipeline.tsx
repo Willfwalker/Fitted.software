@@ -23,6 +23,11 @@ export function DealsPipeline({ deals: initialDeals, contacts, companies }: Deal
   const [deals, setDeals] = useState(initialDeals)
   const [showCreate, setShowCreate] = useState(false)
 
+  // Keep local state in sync with server-revalidated data (e.g. after creating a deal)
+  useEffect(() => {
+    setDeals(initialDeals)
+  }, [initialDeals])
+
   // Auto-open create dialog from ?create=true
   useEffect(() => {
     if (searchParams.get("create") === "true") {
@@ -156,41 +161,39 @@ export function DealsPipeline({ deals: initialDeals, contacts, companies }: Deal
           </div>
 
           {/* Closed deals (collapsible) */}
-          {closedDeals.length > 0 && (
-            <div className="mt-2">
-              <button
-                onClick={() => setShowClosed(!showClosed)}
-                className="flex items-center gap-2 text-[0.82rem] text-[var(--text-dim)] hover:text-[var(--text-muted)] transition-colors font-light mb-3"
-              >
-                {showClosed ? (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                )}
-                Closed ({closedDeals.length})
-              </button>
-              {showClosed && (
-                <div className="grid grid-cols-2 gap-3">
-                  {CLOSED_STAGES.map((stage) => {
-                    const config = DEAL_STAGES.find((s) => s.value === stage)!
-                    return (
-                      <PipelineColumn
-                        key={stage}
-                        stage={stage}
-                        label={config.label}
-                        color={config.color}
-                        deals={dealsByStage[stage]}
-                        isDragOver={false}
-                        onDragStart={handleDragStart}
-                        onDrop={() => handleDrop(stage)}
-                        onDealClick={(deal) => router.push(`/crm/deals/${deal.id}`)}
-                      />
-                    )
-                  })}
-                </div>
+          <div className="mt-2">
+            <button
+              onClick={() => setShowClosed(!showClosed)}
+              className="flex items-center gap-2 text-[0.82rem] text-[var(--text-dim)] hover:text-[var(--text-muted)] transition-colors font-light mb-3"
+            >
+              {showClosed ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
               )}
-            </div>
-          )}
+              Closed ({closedDeals.length})
+            </button>
+            {showClosed && (
+              <div className="grid grid-cols-2 gap-3">
+                {CLOSED_STAGES.map((stage) => {
+                  const config = DEAL_STAGES.find((s) => s.value === stage)!
+                  return (
+                    <PipelineColumn
+                      key={stage}
+                      stage={stage}
+                      label={config.label}
+                      color={config.color}
+                      deals={dealsByStage[stage]}
+                      isDragOver={false}
+                      onDragStart={handleDragStart}
+                      onDrop={() => handleDrop(stage)}
+                      onDealClick={(deal) => router.push(`/crm/deals/${deal.id}`)}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </>
       )}
 

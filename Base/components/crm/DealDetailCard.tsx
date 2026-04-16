@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
-import { Pencil, Calendar, User, Building2, Receipt } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Pencil, Calendar, User, Building2, Receipt, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DealForm } from "./DealForm"
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog"
+import { deleteDeal } from "@/lib/actions/deals"
 import type { Deal } from "@/lib/types/crm"
 import { DEAL_STAGES, PRIORITY_CONFIG } from "@/lib/types/crm"
 
@@ -16,7 +19,22 @@ interface DealDetailCardProps {
 }
 
 export function DealDetailCard({ deal, contacts, companies }: DealDetailCardProps) {
+  const router = useRouter()
   const [showEdit, setShowEdit] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const [isDeleting, startDelete] = useTransition()
+
+  const handleDelete = () => {
+    startDelete(async () => {
+      const result = await deleteDeal(deal.id)
+      if (result.error) {
+        alert(result.error)
+        return
+      }
+      setShowDelete(false)
+      router.push("/crm/deals")
+    })
+  }
 
   const stageConfig = DEAL_STAGES.find((s) => s.value === deal.stage)
   const priorityConfig = PRIORITY_CONFIG[deal.priority]
@@ -66,6 +84,15 @@ export function DealDetailCard({ deal, contacts, companies }: DealDetailCardProp
               className="text-[var(--text-dim)] hover:text-[var(--text)]"
             >
               <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDelete(true)}
+              disabled={isDeleting}
+              className="text-[var(--text-dim)] hover:text-red-400"
+            >
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -175,6 +202,14 @@ export function DealDetailCard({ deal, contacts, companies }: DealDetailCardProp
         contacts={contacts}
         companies={companies}
         deal={deal}
+      />
+
+      <DeleteConfirmDialog
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        onConfirm={handleDelete}
+        title="Delete deal?"
+        description={`This will permanently delete "${deal.title}" and all its activity. This cannot be undone.`}
       />
     </>
   )

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardFallback } from "@/components/dashboard/DashboardFallback"
+import { DashboardEditorial } from "@/components/dashboard/DashboardEditorial"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -22,5 +22,5 @@ export default async function DashboardPage() {
 
   if (!orgId) redirect("/login")
 
-  return <DashboardFallback userId={user.id} orgId={orgId} />
+  return <DashboardEditorial userId={user.id} orgId={orgId} />
 }

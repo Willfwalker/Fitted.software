@@ -22,6 +22,7 @@ create table public.companies (
   email         text,
   address       text,
   notes         text,
+  metadata      jsonb,
   created_by    uuid not null references auth.users(id) on delete set null,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
@@ -44,6 +45,7 @@ create table public.contacts (
   title         text,
   company_id    uuid references public.companies(id) on delete set null,
   notes         text,
+  metadata      jsonb,
   created_by    uuid not null references auth.users(id) on delete set null,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
@@ -71,6 +73,7 @@ create table public.deals (
   assigned_to         uuid references auth.users(id) on delete set null,
   position            integer not null default 0,
   notes               text,
+  metadata            jsonb,
   created_by          uuid not null references auth.users(id) on delete set null,
   created_at          timestamptz default now(),
   updated_at          timestamptz default now()
